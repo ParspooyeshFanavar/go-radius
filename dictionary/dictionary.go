@@ -141,8 +141,9 @@ func (o OID) String() string {
 }
 
 const (
-	EncryptUserPassword   = 1
-	EncryptTunnelPassword = 2
+	EncryptUserPassword              = 1
+	EncryptTunnelPassword            = 2
+	EncryptAscendProprietaryPassword = 3
 )
 
 type Attribute struct {
