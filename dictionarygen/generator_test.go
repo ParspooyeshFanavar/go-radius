@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"layeh.com/radius/dictionary"
+	"radius/dictionary"
 )
 
 func TestTestData(t *testing.T) {

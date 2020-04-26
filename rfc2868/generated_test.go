@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"layeh.com/radius"
+	"radius"
 )
 
 func Test_Tags(t *testing.T) {

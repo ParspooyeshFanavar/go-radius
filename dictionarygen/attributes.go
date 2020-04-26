@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"layeh.com/radius/dictionary"
+	"radius/dictionary"
 )
 
 func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attribute, vendor *dictionary.Vendor) {
@@ -1040,7 +1040,6 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	p(w, `}`)
 }
-
 
 func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, vendor *dictionary.Vendor) {
 	ident := identifier(attr.Name)

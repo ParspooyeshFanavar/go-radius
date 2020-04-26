@@ -5,8 +5,8 @@ package wispr
 import (
 	"strconv"
 
-	"layeh.com/radius"
-	"layeh.com/radius/rfc2865"
+	"radius"
+	"radius/rfc2865"
 )
 
 const (
