@@ -133,7 +133,11 @@ func (s *PacketServer) Serve(conn net.PacketConn) error {
 		go func(buff []byte, remoteAddr net.Addr) {
 			defer s.activeDone()
 
-			secret, err := s.SecretSource.RADIUSSecret(s.ctx, remoteAddr)
+			packet, err := Parse(buff, []byte{})
+			if err != nil {
+				return
+			}
+			secret, err := s.SecretSource.RADIUSSecret(s.ctx, remoteAddr, packet)
 			if err != nil {
 				return
 			}
@@ -144,8 +148,9 @@ func (s *PacketServer) Serve(conn net.PacketConn) error {
 			if !s.InsecureSkipVerify && !IsAuthenticRequest(buff, secret) {
 				return
 			}
+			packet.Secret = secret
 
-			packet, err := Parse(buff, secret)
+			packet, err = Parse(buff, secret)
 			if err != nil {
 				return
 			}
