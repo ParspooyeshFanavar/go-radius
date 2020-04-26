@@ -5,7 +5,7 @@ package rfc6911
 import (
 	"net"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 )
 
 const (

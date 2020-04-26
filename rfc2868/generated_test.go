@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 )
 
 func Test_Tags(t *testing.T) {

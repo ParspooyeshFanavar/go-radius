@@ -3,7 +3,7 @@ package dictionarygen
 import (
 	"io"
 
-	"radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 )
 
 func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {

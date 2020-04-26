@@ -3,7 +3,7 @@
 package rfc5176
 
 import (
-	. "radius/rfc3576"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc3576"
 )
 
 func init() {

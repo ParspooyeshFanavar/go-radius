@@ -5,7 +5,7 @@ package rfc2866
 import (
 	"strconv"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 )
 
 const (

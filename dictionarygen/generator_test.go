@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 )
 
 func TestTestData(t *testing.T) {

@@ -8,13 +8,13 @@ jobs:
       # specify the version
       - image: circleci/golang:1.10
 
-    working_directory: /go/src/radius
+    working_directory: /go/src/bitbucket.parspooyesh.com/ibscgw/radius
     steps:
       - checkout
 
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
       - run: go test -v ./...
-      - run: go install radius/cmd/radius-dict-gen
-      - run: go install radius/cmd/radserver
-      - run: go install radius/cmd/radtest
+      - run: go install bitbucket.parspooyesh.com/ibscgw/radius/cmd/radius-dict-gen
+      - run: go install bitbucket.parspooyesh.com/ibscgw/radius/cmd/radserver
+      - run: go install bitbucket.parspooyesh.com/ibscgw/radius/cmd/radtest

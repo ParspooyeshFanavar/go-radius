@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 )
 
 type externalAttribute struct {
@@ -243,10 +243,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 	}
 	if len(attrs) > 0 || len(vendors) > 0 {
 		p(&w)
-		p(&w, `	"radius"`)
+		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius"`)
 	}
 	if len(vendors) > 0 {
-		p(&w, `	"radius/rfc2865"`)
+		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"`)
 	}
 	if len(externalAttributes) > 0 {
 		printedNewLine := false

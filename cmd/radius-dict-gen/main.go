@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"radius/dictionary"
-	"radius/dictionarygen"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionarygen"
 )
 
 type Refs map[string]string

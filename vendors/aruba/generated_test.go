@@ -3,8 +3,8 @@ package aruba_test
 import (
 	"testing"
 
-	"radius"
-	. "radius/vendors/aruba"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/vendors/aruba"
 )
 
 func TestLookup(t *testing.T) {

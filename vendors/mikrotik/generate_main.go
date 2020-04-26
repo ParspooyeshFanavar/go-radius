@@ -12,8 +12,8 @@ import (
 	"net/http"
 	"regexp"
 
-	"radius/dictionary"
-	"radius/dictionarygen"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionarygen"
 )
 
 type ParseResponse struct {

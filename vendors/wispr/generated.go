@@ -5,8 +5,8 @@ package wispr
 import (
 	"strconv"
 
-	"radius"
-	"radius/rfc2865"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (

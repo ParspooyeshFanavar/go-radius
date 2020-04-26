@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"radius"
-	"radius/rfc2865"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 )
 
 func main() {
@@ -52,7 +52,7 @@ func main() {
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "package debug")
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, `import "radius/dictionary"`)
+	fmt.Fprintln(w, `import "bitbucket.parspooyesh.com/ibscgw/radius/dictionary"`)
 	fmt.Fprintln(w, "")
 	fmt.Fprintf(w, "var IncludedDictionary = %#v\n", dict)
 }

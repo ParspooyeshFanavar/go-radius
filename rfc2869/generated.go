@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 )
 
 const (

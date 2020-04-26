@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"os"
 
-	"radius/dictionary"
-	"radius/dictionarygen"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionarygen"
 )
 
 func main() {

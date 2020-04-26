@@ -6,7 +6,7 @@ import (
 	"net"
 	"strconv"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 )
 
 const (

@@ -5,9 +5,9 @@ package rfc3576
 import (
 	"strconv"
 
-	"radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
 
-	. "radius/rfc2865"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (

@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"radius"
-	"radius/debug"
-	. "radius/rfc2865"
-	. "radius/rfc2866"
-	. "radius/rfc2869"
-	. "radius/rfc3162"
+	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/debug"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2866"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2869"
+	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc3162"
 )
 
 var secret = []byte(`1234567`)
