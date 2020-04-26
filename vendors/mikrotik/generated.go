@@ -1981,7 +1981,7 @@ func MikrotikDHCPOptionParamSTR1_Del(p *radius.Packet) {
 	_Mikrotik_DelVendor(p, 24)
 }
 
-func MikortikDHCPOptionParamSTR2_Add(p *radius.Packet, value []byte) (err error) {
+func MikrotikDHCPOptionParamSTR2_Add(p *radius.Packet, value []byte) (err error) {
 	var a radius.Attribute
 	a, err = radius.NewBytes(value)
 	if err != nil {
@@ -1990,7 +1990,7 @@ func MikortikDHCPOptionParamSTR2_Add(p *radius.Packet, value []byte) (err error)
 	return _Mikrotik_AddVendor(p, 25, a)
 }
 
-func MikortikDHCPOptionParamSTR2_AddString(p *radius.Packet, value string) (err error) {
+func MikrotikDHCPOptionParamSTR2_AddString(p *radius.Packet, value string) (err error) {
 	var a radius.Attribute
 	a, err = radius.NewString(value)
 	if err != nil {
@@ -1999,17 +1999,17 @@ func MikortikDHCPOptionParamSTR2_AddString(p *radius.Packet, value string) (err 
 	return _Mikrotik_AddVendor(p, 25, a)
 }
 
-func MikortikDHCPOptionParamSTR2_Get(p *radius.Packet) (value []byte) {
-	value, _ = MikortikDHCPOptionParamSTR2_Lookup(p)
+func MikrotikDHCPOptionParamSTR2_Get(p *radius.Packet) (value []byte) {
+	value, _ = MikrotikDHCPOptionParamSTR2_Lookup(p)
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_GetString(p *radius.Packet) (value string) {
-	value, _ = MikortikDHCPOptionParamSTR2_LookupString(p)
+func MikrotikDHCPOptionParamSTR2_GetString(p *radius.Packet) (value string) {
+	value, _ = MikrotikDHCPOptionParamSTR2_LookupString(p)
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_Gets(p *radius.Packet) (values [][]byte, err error) {
+func MikrotikDHCPOptionParamSTR2_Gets(p *radius.Packet) (values [][]byte, err error) {
 	var i []byte
 	for _, attr := range _Mikrotik_GetsVendor(p, 25) {
 		i = radius.Bytes(attr)
@@ -2021,7 +2021,7 @@ func MikortikDHCPOptionParamSTR2_Gets(p *radius.Packet) (values [][]byte, err er
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_GetStrings(p *radius.Packet) (values []string, err error) {
+func MikrotikDHCPOptionParamSTR2_GetStrings(p *radius.Packet) (values []string, err error) {
 	var i string
 	for _, attr := range _Mikrotik_GetsVendor(p, 25) {
 		i = radius.String(attr)
@@ -2033,7 +2033,7 @@ func MikortikDHCPOptionParamSTR2_GetStrings(p *radius.Packet) (values []string, 
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_Lookup(p *radius.Packet) (value []byte, err error) {
+func MikrotikDHCPOptionParamSTR2_Lookup(p *radius.Packet) (value []byte, err error) {
 	a, ok := _Mikrotik_LookupVendor(p, 25)
 	if !ok {
 		err = radius.ErrNoAttribute
@@ -2043,7 +2043,7 @@ func MikortikDHCPOptionParamSTR2_Lookup(p *radius.Packet) (value []byte, err err
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_LookupString(p *radius.Packet) (value string, err error) {
+func MikrotikDHCPOptionParamSTR2_LookupString(p *radius.Packet) (value string, err error) {
 	a, ok := _Mikrotik_LookupVendor(p, 25)
 	if !ok {
 		err = radius.ErrNoAttribute
@@ -2053,7 +2053,7 @@ func MikortikDHCPOptionParamSTR2_LookupString(p *radius.Packet) (value string, e
 	return
 }
 
-func MikortikDHCPOptionParamSTR2_Set(p *radius.Packet, value []byte) (err error) {
+func MikrotikDHCPOptionParamSTR2_Set(p *radius.Packet, value []byte) (err error) {
 	var a radius.Attribute
 	a, err = radius.NewBytes(value)
 	if err != nil {
@@ -2062,7 +2062,7 @@ func MikortikDHCPOptionParamSTR2_Set(p *radius.Packet, value []byte) (err error)
 	return _Mikrotik_SetVendor(p, 25, a)
 }
 
-func MikortikDHCPOptionParamSTR2_SetString(p *radius.Packet, value string) (err error) {
+func MikrotikDHCPOptionParamSTR2_SetString(p *radius.Packet, value string) (err error) {
 	var a radius.Attribute
 	a, err = radius.NewString(value)
 	if err != nil {
@@ -2071,7 +2071,7 @@ func MikortikDHCPOptionParamSTR2_SetString(p *radius.Packet, value string) (err 
 	return _Mikrotik_SetVendor(p, 25, a)
 }
 
-func MikortikDHCPOptionParamSTR2_Del(p *radius.Packet) {
+func MikrotikDHCPOptionParamSTR2_Del(p *radius.Packet) {
 	_Mikrotik_DelVendor(p, 25)
 }
 
@@ -2132,48 +2132,48 @@ func MikrotikWirelessVLANID_Del(p *radius.Packet) {
 	_Mikrotik_DelVendor(p, 26)
 }
 
-type MikrotikWirelessVLANIDtype uint32
+type MikrotikWirelessVLANIDType uint32
 
 const (
-	MikrotikWirelessVLANIDtype_Value_Eight021q  MikrotikWirelessVLANIDtype = 0
-	MikrotikWirelessVLANIDtype_Value_Eight021ad MikrotikWirelessVLANIDtype = 1
+	MikrotikWirelessVLANIDType_Value_Eight021q  MikrotikWirelessVLANIDType = 0
+	MikrotikWirelessVLANIDType_Value_Eight021ad MikrotikWirelessVLANIDType = 1
 )
 
-var MikrotikWirelessVLANIDtype_Strings = map[MikrotikWirelessVLANIDtype]string{
-	MikrotikWirelessVLANIDtype_Value_Eight021q:  "802.1q",
-	MikrotikWirelessVLANIDtype_Value_Eight021ad: "802.1ad",
+var MikrotikWirelessVLANIDType_Strings = map[MikrotikWirelessVLANIDType]string{
+	MikrotikWirelessVLANIDType_Value_Eight021q:  "802.1q",
+	MikrotikWirelessVLANIDType_Value_Eight021ad: "802.1ad",
 }
 
-func (a MikrotikWirelessVLANIDtype) String() string {
-	if str, ok := MikrotikWirelessVLANIDtype_Strings[a]; ok {
+func (a MikrotikWirelessVLANIDType) String() string {
+	if str, ok := MikrotikWirelessVLANIDType_Strings[a]; ok {
 		return str
 	}
-	return "MikrotikWirelessVLANIDtype(" + strconv.FormatUint(uint64(a), 10) + ")"
+	return "MikrotikWirelessVLANIDType(" + strconv.FormatUint(uint64(a), 10) + ")"
 }
 
-func MikrotikWirelessVLANIDtype_Add(p *radius.Packet, value MikrotikWirelessVLANIDtype) (err error) {
+func MikrotikWirelessVLANIDType_Add(p *radius.Packet, value MikrotikWirelessVLANIDType) (err error) {
 	a := radius.NewInteger(uint32(value))
 	return _Mikrotik_AddVendor(p, 27, a)
 }
 
-func MikrotikWirelessVLANIDtype_Get(p *radius.Packet) (value MikrotikWirelessVLANIDtype) {
-	value, _ = MikrotikWirelessVLANIDtype_Lookup(p)
+func MikrotikWirelessVLANIDType_Get(p *radius.Packet) (value MikrotikWirelessVLANIDType) {
+	value, _ = MikrotikWirelessVLANIDType_Lookup(p)
 	return
 }
 
-func MikrotikWirelessVLANIDtype_Gets(p *radius.Packet) (values []MikrotikWirelessVLANIDtype, err error) {
+func MikrotikWirelessVLANIDType_Gets(p *radius.Packet) (values []MikrotikWirelessVLANIDType, err error) {
 	var i uint32
 	for _, attr := range _Mikrotik_GetsVendor(p, 27) {
 		i, err = radius.Integer(attr)
 		if err != nil {
 			return
 		}
-		values = append(values, MikrotikWirelessVLANIDtype(i))
+		values = append(values, MikrotikWirelessVLANIDType(i))
 	}
 	return
 }
 
-func MikrotikWirelessVLANIDtype_Lookup(p *radius.Packet) (value MikrotikWirelessVLANIDtype, err error) {
+func MikrotikWirelessVLANIDType_Lookup(p *radius.Packet) (value MikrotikWirelessVLANIDType, err error) {
 	a, ok := _Mikrotik_LookupVendor(p, 27)
 	if !ok {
 		err = radius.ErrNoAttribute
@@ -2184,16 +2184,16 @@ func MikrotikWirelessVLANIDtype_Lookup(p *radius.Packet) (value MikrotikWireless
 	if err != nil {
 		return
 	}
-	value = MikrotikWirelessVLANIDtype(i)
+	value = MikrotikWirelessVLANIDType(i)
 	return
 }
 
-func MikrotikWirelessVLANIDtype_Set(p *radius.Packet, value MikrotikWirelessVLANIDtype) (err error) {
+func MikrotikWirelessVLANIDType_Set(p *radius.Packet, value MikrotikWirelessVLANIDType) (err error) {
 	a := radius.NewInteger(uint32(value))
 	return _Mikrotik_SetVendor(p, 27, a)
 }
 
-func MikrotikWirelessVLANIDtype_Del(p *radius.Packet) {
+func MikrotikWirelessVLANIDType_Del(p *radius.Packet) {
 	_Mikrotik_DelVendor(p, 27)
 }
 
