@@ -3,16 +3,363 @@
 package huawei
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 
 	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (
 	_Huawei_VendorID = 2011
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	1:   {"Huawei-Input-Burst-Size", 5, nil},
+	2:   {"Huawei-Input-Average-Rate", 5, nil},
+	3:   {"Huawei-Input-Peak-Rate", 5, nil},
+	4:   {"Huawei-Output-Burst-Size", 5, nil},
+	5:   {"Huawei-Output-Average-Rate", 5, nil},
+	6:   {"Huawei-Output-Peak-Rate", 5, nil},
+	7:   {"Huawei-In-Kb-Before-T-Switch", 5, nil},
+	8:   {"Huawei-Out-Kb-Before-T-Switch", 5, nil},
+	9:   {"Huawei-In-Pkt-Before-T-Switch", 5, nil},
+	10:  {"Huawei-Out-Pkt-Before-T-Switch", 5, nil},
+	11:  {"Huawei-In-Kb-After-T-Switch", 5, nil},
+	12:  {"Huawei-Out-Kb-After-T-Switch", 5, nil},
+	13:  {"Huawei-In-Pkt-After-T-Switch", 5, nil},
+	14:  {"Huawei-Out-Pkt-After-T-Switch", 5, nil},
+	15:  {"Huawei-Remanent-Volume", 5, nil},
+	16:  {"Huawei-Tariff-Switch-Interval", 5, nil},
+	17:  {"Huawei-ISP-ID", 1, nil},
+	18:  {"Huawei-Max-Users-Per-Logic-Port", 5, nil},
+	20:  {"Huawei-Command", 5, nil},
+	22:  {"Huawei-Priority", 5, nil},
+	24:  {"Huawei-Control-Identifier", 5, nil},
+	25:  {"Huawei-Result-Code", 5, HuaweiResultCode_GetValueString},
+	26:  {"Huawei-Connect-ID", 5, nil},
+	27:  {"Huawei-PortalURL", 1, nil},
+	28:  {"Huawei-FTP-Directory", 1, nil},
+	29:  {"Huawei-Exec-Privilege", 5, nil},
+	30:  {"Huawei-IP-Address", 5, nil},
+	31:  {"Huawei-Qos-Profile-Name", 1, nil},
+	32:  {"Huawei-SIP-Server", 1, nil},
+	33:  {"Huawei-User-Password", 1, nil},
+	34:  {"Huawei-Command-Mode", 1, nil},
+	35:  {"Huawei-Renewal-Time", 5, nil},
+	36:  {"Huawei-Rebinding-Time", 5, nil},
+	37:  {"Huawei-IGMP-Enable", 5, nil},
+	39:  {"Huawei-Destnation-IP-Addr", 1, nil},
+	40:  {"Huawei-Destnation-Volume", 1, nil},
+	59:  {"Huawei-Startup-Stamp", 5, nil},
+	60:  {"Huawei-IPHost-Addr", 1, nil},
+	61:  {"Huawei-Up-Priority", 5, nil},
+	62:  {"Huawei-Down-Priority", 5, nil},
+	63:  {"Huawei-Tunnel-VPN-Instance", 1, nil},
+	64:  {"Huawei-VT-Name", 5, nil},
+	65:  {"Huawei-User-Date", 1, nil},
+	66:  {"Huawei-User-Class", 1, nil},
+	70:  {"Huawei-PPP-NCP-Type", 5, nil},
+	71:  {"Huawei-VSI-Name", 1, nil},
+	72:  {"Huawei-Subnet-Mask", 3, nil},
+	73:  {"Huawei-Gateway-Address", 3, nil},
+	74:  {"Huawei-Lease-Time", 5, nil},
+	75:  {"Huawei-Primary-WINS", 3, nil},
+	76:  {"Huawei-Secondary-WINS", 3, nil},
+	77:  {"Huawei-Input-Peak-Burst-Size", 5, nil},
+	78:  {"Huawei-Output-Peak-Burst-Size", 5, nil},
+	79:  {"Huawei-Reduced-CIR", 5, nil},
+	80:  {"Huawei-Tunnel-Session-Limit", 5, nil},
+	81:  {"Huawei-Zone-Name", 1, nil},
+	82:  {"Huawei-Data-Filter", 1, nil},
+	83:  {"Huawei-Access-Service", 1, nil},
+	84:  {"Huawei-Accounting-Level", 5, nil},
+	85:  {"Huawei-Portal-Mode", 5, HuaweiPortalMode_GetValueString},
+	86:  {"Huawei-DPI-Policy-Name", 1, nil},
+	87:  {"huawei-Policy-Route", 3, nil},
+	88:  {"Huawei-Framed-Pool", 1, nil},
+	89:  {"Huawei-L2TP-Terminate-Cause", 1, nil},
+	90:  {"Huawei-Multi-Account-Mode", 5, nil},
+	91:  {"Huawei-Queue-Profile", 1, nil},
+	92:  {"Huawei-Layer4-Session-Limit", 5, nil},
+	93:  {"Huawei-Multicast-Profile", 1, nil},
+	94:  {"Huawei-VPN-Instance", 1, nil},
+	95:  {"Huawei-Policy-Name", 1, nil},
+	96:  {"Huawei-Tunnel-Group-Name", 1, nil},
+	97:  {"Huawei-Multicast-Source-Group", 1, nil},
+	98:  {"Huawei-Multicast-Receive-Group", 3, nil},
+	99:  {"Huawei-User-Multicast-Type", 5, nil},
+	100: {"Huawei-Reduced-PIR", 5, nil},
+	101: {"Huawei-LI-ID", 1, nil},
+	102: {"Huawei-LI-Md-Address", 3, nil},
+	103: {"Huawei-LI-Md-Port", 5, nil},
+	104: {"Huawei-LI-Md-VpnInstance", 1, nil},
+	105: {"Huawei-Service-Chg-Cmd", 5, nil},
+	106: {"Huawei-Acct-Packet-Type", 5, nil},
+	107: {"Huawei-Call-Reference", 5, nil},
+	108: {"Huawei-PSTN-Port", 5, nil},
+	109: {"Huawei-Voip-Service-Type", 5, nil},
+	110: {"Huawei-Acct-Connection-Time", 5, nil},
+	112: {"Huawei-Error-Reason", 5, nil},
+	113: {"Huawei-Remain-Monney", 5, nil},
+	123: {"Huawei-Org-GK-ipaddr", 3, nil},
+	124: {"Huawei-Org-GW-ipaddr", 3, nil},
+	125: {"Huawei-Dst-GK-ipaddr", 3, nil},
+	126: {"Huawei-Dst-GW-ipaddr", 3, nil},
+	127: {"Huawei-Access-Num", 1, nil},
+	128: {"Huawei-Remain-Time", 5, nil},
+	131: {"Huawei-Codec-Type", 5, nil},
+	132: {"Huawei-Transfer-Num", 1, nil},
+	133: {"Huawei-New-User-Name", 1, nil},
+	134: {"Huawei-Transfer-Station-Id", 1, nil},
+	135: {"Huawei-Primary-DNS", 3, nil},
+	136: {"Huawei-Secondary-DNS", 3, nil},
+	137: {"Huawei-ONLY-Account-Type", 5, nil},
+	138: {"Huawei-Domain-Name", 1, nil},
+	139: {"Huawei-ANCP-Profile", 1, nil},
+	140: {"Huawei-HTTP-Redirect-URL", 1, nil},
+	141: {"Huawei-Loopback-Address", 1, nil},
+	142: {"Huawei-QoS-Profile-Type", 5, HuaweiQoSProfileType_GetValueString},
+	143: {"Huawei-Max-List-Num", 5, nil},
+	144: {"Huawei-Acct-IPv6-Input-Octets", 5, nil},
+	145: {"Huawei-Acct-IPv6-Output-Octets", 5, nil},
+	146: {"Huawei-Acct-IPv6-Input-Packets", 5, nil},
+	147: {"Huawei-Acct-IPv6-Output-Packets", 5, nil},
+	148: {"Huawei-Acct-IPv6-Input-Gigawords", 5, nil},
+	149: {"Huawei-Acct-IPv6-Output-Gigawords", 5, nil},
+	150: {"Huawei-DHCPv6-Option37", 1, nil},
+	151: {"Huawei-DHCPv6-Option38", 1, nil},
+	153: {"Huawei-User-Mac", 1, nil},
+	154: {"Huawei-DNS-Server-IPv6-address", 6, nil},
+	155: {"Huawei-DHCPv4-Option121", 1, nil},
+	156: {"Huawei-DHCPv4-Option43", 1, nil},
+	157: {"Huawei-Framed-Pool-Group", 1, nil},
+	158: {"Huawei-Framed-IPv6-Address", 6, nil},
+	159: {"Huawei-Acct-Update-Address", 5, nil},
+	160: {"Huawei-NAT-Policy-Name", 1, nil},
+	161: {"Huawei-NAT-Public-Address", 1, nil},
+	162: {"Huawei-NAT-Start-Port", 1, nil},
+	163: {"Huawei-NAT-End-Port", 1, nil},
+	164: {"Huawei-NAT-Port-Forwarding", 1, nil},
+	165: {"Huawei-NAT-Port-Range-Update", 5, nil},
+	166: {"Huawei-DS-Lite-Tunnel-Name", 1, nil},
+	167: {"Huawei-PCP-Server-Name", 1, nil},
+	168: {"Huawei-Public-IP-Addr-State", 5, HuaweiPublicIPAddrState_GetValueString},
+	180: {"Huawei-Auth-Type", 5, HuaweiAuthType_GetValueString},
+	181: {"Huawei-Acct-Terminate-Subcause", 1, nil},
+	182: {"Huawei-Down-QOS-Profile-Name", 1, nil},
+	183: {"Huawei-Port-Mirror", 5, HuaweiPortMirror_GetValueString},
+	184: {"Huawei-Account-Info", 1, nil},
+	185: {"Huawei-Service-Info", 1, nil},
+	187: {"Huawei-DHCP-Option", 2, nil},
+	188: {"Huawei-AVpair", 1, nil},
+	191: {"Huawei-Delegated-IPv6-Prefix-Pool", 1, nil},
+	192: {"Huawei-IPv6-Prefix-Lease", 2, nil},
+	193: {"Huawei-IPv6-Address-Lease", 2, nil},
+	194: {"Huawei-IPv6-Policy-Route", 7, nil},
+	196: {"Huawei-MNG-IPv6", 5, HuaweiMNGIPv6_GetValueString},
+	211: {"Huawei-Flow-Info", 1, nil},
+	212: {"Huawei-Flow-Id", 5, nil},
+	214: {"Huawei-DHCP-Server-IP", 3, nil},
+	215: {"Huawei-Application-Type", 5, HuaweiApplicationType_GetValueString},
+	216: {"Huawei-Indication-Flag", 2, nil},
+	217: {"Huawei-Original_NAS-IP_Address", 3, nil},
+	218: {"Huawei-User-Priority", 5, HuaweiUserPriority_GetValueString},
+	219: {"Huawei-ACS-Url", 1, nil},
+	220: {"Huawei-Provision-Code", 1, nil},
+	221: {"Huawei-Application-Scene", 2, nil},
+	222: {"Huawei-MS-Maximum-MAC-Study-Number", 2, nil},
+	232: {"Huawei-GGSN-Vendor", 1, nil},
+	233: {"Huawei-GGSN-Version", 1, nil},
+	253: {"Huawei-Web-URL", 1, nil},
+	254: {"Huawei-Version", 1, nil},
+	255: {"Huawei-Product-ID", 1, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"Huawei-Input-Burst-Size":            {1, 5, nil},
+	"Huawei-Input-Average-Rate":          {2, 5, nil},
+	"Huawei-Input-Peak-Rate":             {3, 5, nil},
+	"Huawei-Output-Burst-Size":           {4, 5, nil},
+	"Huawei-Output-Average-Rate":         {5, 5, nil},
+	"Huawei-Output-Peak-Rate":            {6, 5, nil},
+	"Huawei-In-Kb-Before-T-Switch":       {7, 5, nil},
+	"Huawei-Out-Kb-Before-T-Switch":      {8, 5, nil},
+	"Huawei-In-Pkt-Before-T-Switch":      {9, 5, nil},
+	"Huawei-Out-Pkt-Before-T-Switch":     {10, 5, nil},
+	"Huawei-In-Kb-After-T-Switch":        {11, 5, nil},
+	"Huawei-Out-Kb-After-T-Switch":       {12, 5, nil},
+	"Huawei-In-Pkt-After-T-Switch":       {13, 5, nil},
+	"Huawei-Out-Pkt-After-T-Switch":      {14, 5, nil},
+	"Huawei-Remanent-Volume":             {15, 5, nil},
+	"Huawei-Tariff-Switch-Interval":      {16, 5, nil},
+	"Huawei-ISP-ID":                      {17, 1, nil},
+	"Huawei-Max-Users-Per-Logic-Port":    {18, 5, nil},
+	"Huawei-Command":                     {20, 5, nil},
+	"Huawei-Priority":                    {22, 5, nil},
+	"Huawei-Control-Identifier":          {24, 5, nil},
+	"Huawei-Result-Code":                 {25, 5, HuaweiResultCode_GetValueNumber},
+	"Huawei-Connect-ID":                  {26, 5, nil},
+	"Huawei-PortalURL":                   {27, 1, nil},
+	"Huawei-FTP-Directory":               {28, 1, nil},
+	"Huawei-Exec-Privilege":              {29, 5, nil},
+	"Huawei-IP-Address":                  {30, 5, nil},
+	"Huawei-Qos-Profile-Name":            {31, 1, nil},
+	"Huawei-SIP-Server":                  {32, 1, nil},
+	"Huawei-User-Password":               {33, 1, nil},
+	"Huawei-Command-Mode":                {34, 1, nil},
+	"Huawei-Renewal-Time":                {35, 5, nil},
+	"Huawei-Rebinding-Time":              {36, 5, nil},
+	"Huawei-IGMP-Enable":                 {37, 5, nil},
+	"Huawei-Destnation-IP-Addr":          {39, 1, nil},
+	"Huawei-Destnation-Volume":           {40, 1, nil},
+	"Huawei-Startup-Stamp":               {59, 5, nil},
+	"Huawei-IPHost-Addr":                 {60, 1, nil},
+	"Huawei-Up-Priority":                 {61, 5, nil},
+	"Huawei-Down-Priority":               {62, 5, nil},
+	"Huawei-Tunnel-VPN-Instance":         {63, 1, nil},
+	"Huawei-VT-Name":                     {64, 5, nil},
+	"Huawei-User-Date":                   {65, 1, nil},
+	"Huawei-User-Class":                  {66, 1, nil},
+	"Huawei-PPP-NCP-Type":                {70, 5, nil},
+	"Huawei-VSI-Name":                    {71, 1, nil},
+	"Huawei-Subnet-Mask":                 {72, 3, nil},
+	"Huawei-Gateway-Address":             {73, 3, nil},
+	"Huawei-Lease-Time":                  {74, 5, nil},
+	"Huawei-Primary-WINS":                {75, 3, nil},
+	"Huawei-Secondary-WINS":              {76, 3, nil},
+	"Huawei-Input-Peak-Burst-Size":       {77, 5, nil},
+	"Huawei-Output-Peak-Burst-Size":      {78, 5, nil},
+	"Huawei-Reduced-CIR":                 {79, 5, nil},
+	"Huawei-Tunnel-Session-Limit":        {80, 5, nil},
+	"Huawei-Zone-Name":                   {81, 1, nil},
+	"Huawei-Data-Filter":                 {82, 1, nil},
+	"Huawei-Access-Service":              {83, 1, nil},
+	"Huawei-Accounting-Level":            {84, 5, nil},
+	"Huawei-Portal-Mode":                 {85, 5, HuaweiPortalMode_GetValueNumber},
+	"Huawei-DPI-Policy-Name":             {86, 1, nil},
+	"huawei-Policy-Route":                {87, 3, nil},
+	"Huawei-Framed-Pool":                 {88, 1, nil},
+	"Huawei-L2TP-Terminate-Cause":        {89, 1, nil},
+	"Huawei-Multi-Account-Mode":          {90, 5, nil},
+	"Huawei-Queue-Profile":               {91, 1, nil},
+	"Huawei-Layer4-Session-Limit":        {92, 5, nil},
+	"Huawei-Multicast-Profile":           {93, 1, nil},
+	"Huawei-VPN-Instance":                {94, 1, nil},
+	"Huawei-Policy-Name":                 {95, 1, nil},
+	"Huawei-Tunnel-Group-Name":           {96, 1, nil},
+	"Huawei-Multicast-Source-Group":      {97, 1, nil},
+	"Huawei-Multicast-Receive-Group":     {98, 3, nil},
+	"Huawei-User-Multicast-Type":         {99, 5, nil},
+	"Huawei-Reduced-PIR":                 {100, 5, nil},
+	"Huawei-LI-ID":                       {101, 1, nil},
+	"Huawei-LI-Md-Address":               {102, 3, nil},
+	"Huawei-LI-Md-Port":                  {103, 5, nil},
+	"Huawei-LI-Md-VpnInstance":           {104, 1, nil},
+	"Huawei-Service-Chg-Cmd":             {105, 5, nil},
+	"Huawei-Acct-Packet-Type":            {106, 5, nil},
+	"Huawei-Call-Reference":              {107, 5, nil},
+	"Huawei-PSTN-Port":                   {108, 5, nil},
+	"Huawei-Voip-Service-Type":           {109, 5, nil},
+	"Huawei-Acct-Connection-Time":        {110, 5, nil},
+	"Huawei-Error-Reason":                {112, 5, nil},
+	"Huawei-Remain-Monney":               {113, 5, nil},
+	"Huawei-Org-GK-ipaddr":               {123, 3, nil},
+	"Huawei-Org-GW-ipaddr":               {124, 3, nil},
+	"Huawei-Dst-GK-ipaddr":               {125, 3, nil},
+	"Huawei-Dst-GW-ipaddr":               {126, 3, nil},
+	"Huawei-Access-Num":                  {127, 1, nil},
+	"Huawei-Remain-Time":                 {128, 5, nil},
+	"Huawei-Codec-Type":                  {131, 5, nil},
+	"Huawei-Transfer-Num":                {132, 1, nil},
+	"Huawei-New-User-Name":               {133, 1, nil},
+	"Huawei-Transfer-Station-Id":         {134, 1, nil},
+	"Huawei-Primary-DNS":                 {135, 3, nil},
+	"Huawei-Secondary-DNS":               {136, 3, nil},
+	"Huawei-ONLY-Account-Type":           {137, 5, nil},
+	"Huawei-Domain-Name":                 {138, 1, nil},
+	"Huawei-ANCP-Profile":                {139, 1, nil},
+	"Huawei-HTTP-Redirect-URL":           {140, 1, nil},
+	"Huawei-Loopback-Address":            {141, 1, nil},
+	"Huawei-QoS-Profile-Type":            {142, 5, HuaweiQoSProfileType_GetValueNumber},
+	"Huawei-Max-List-Num":                {143, 5, nil},
+	"Huawei-Acct-IPv6-Input-Octets":      {144, 5, nil},
+	"Huawei-Acct-IPv6-Output-Octets":     {145, 5, nil},
+	"Huawei-Acct-IPv6-Input-Packets":     {146, 5, nil},
+	"Huawei-Acct-IPv6-Output-Packets":    {147, 5, nil},
+	"Huawei-Acct-IPv6-Input-Gigawords":   {148, 5, nil},
+	"Huawei-Acct-IPv6-Output-Gigawords":  {149, 5, nil},
+	"Huawei-DHCPv6-Option37":             {150, 1, nil},
+	"Huawei-DHCPv6-Option38":             {151, 1, nil},
+	"Huawei-User-Mac":                    {153, 1, nil},
+	"Huawei-DNS-Server-IPv6-address":     {154, 6, nil},
+	"Huawei-DHCPv4-Option121":            {155, 1, nil},
+	"Huawei-DHCPv4-Option43":             {156, 1, nil},
+	"Huawei-Framed-Pool-Group":           {157, 1, nil},
+	"Huawei-Framed-IPv6-Address":         {158, 6, nil},
+	"Huawei-Acct-Update-Address":         {159, 5, nil},
+	"Huawei-NAT-Policy-Name":             {160, 1, nil},
+	"Huawei-NAT-Public-Address":          {161, 1, nil},
+	"Huawei-NAT-Start-Port":              {162, 1, nil},
+	"Huawei-NAT-End-Port":                {163, 1, nil},
+	"Huawei-NAT-Port-Forwarding":         {164, 1, nil},
+	"Huawei-NAT-Port-Range-Update":       {165, 5, nil},
+	"Huawei-DS-Lite-Tunnel-Name":         {166, 1, nil},
+	"Huawei-PCP-Server-Name":             {167, 1, nil},
+	"Huawei-Public-IP-Addr-State":        {168, 5, HuaweiPublicIPAddrState_GetValueNumber},
+	"Huawei-Auth-Type":                   {180, 5, HuaweiAuthType_GetValueNumber},
+	"Huawei-Acct-Terminate-Subcause":     {181, 1, nil},
+	"Huawei-Down-QOS-Profile-Name":       {182, 1, nil},
+	"Huawei-Port-Mirror":                 {183, 5, HuaweiPortMirror_GetValueNumber},
+	"Huawei-Account-Info":                {184, 1, nil},
+	"Huawei-Service-Info":                {185, 1, nil},
+	"Huawei-DHCP-Option":                 {187, 2, nil},
+	"Huawei-AVpair":                      {188, 1, nil},
+	"Huawei-Delegated-IPv6-Prefix-Pool":  {191, 1, nil},
+	"Huawei-IPv6-Prefix-Lease":           {192, 2, nil},
+	"Huawei-IPv6-Address-Lease":          {193, 2, nil},
+	"Huawei-IPv6-Policy-Route":           {194, 7, nil},
+	"Huawei-MNG-IPv6":                    {196, 5, HuaweiMNGIPv6_GetValueNumber},
+	"Huawei-Flow-Info":                   {211, 1, nil},
+	"Huawei-Flow-Id":                     {212, 5, nil},
+	"Huawei-DHCP-Server-IP":              {214, 3, nil},
+	"Huawei-Application-Type":            {215, 5, HuaweiApplicationType_GetValueNumber},
+	"Huawei-Indication-Flag":             {216, 2, nil},
+	"Huawei-Original_NAS-IP_Address":     {217, 3, nil},
+	"Huawei-User-Priority":               {218, 5, HuaweiUserPriority_GetValueNumber},
+	"Huawei-ACS-Url":                     {219, 1, nil},
+	"Huawei-Provision-Code":              {220, 1, nil},
+	"Huawei-Application-Scene":           {221, 2, nil},
+	"Huawei-MS-Maximum-MAC-Study-Number": {222, 2, nil},
+	"Huawei-GGSN-Vendor":                 {232, 1, nil},
+	"Huawei-GGSN-Version":                {233, 1, nil},
+	"Huawei-Web-URL":                     {253, 1, nil},
+	"Huawei-Version":                     {254, 1, nil},
+	"Huawei-Product-ID":                  {255, 1, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_Huawei_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _Huawei_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute
@@ -1368,6 +1715,24 @@ const (
 
 var HuaweiResultCode_Strings = map[HuaweiResultCode]string{
 	HuaweiResultCode_Value_Succeeded: "Succeeded",
+}
+
+func HuaweiResultCode_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiResultCode_Strings[HuaweiResultCode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiResultCode mapping", value)
+	}
+	return
+}
+
+func HuaweiResultCode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiResultCode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiResultCode mapping", value)
+	return
 }
 
 func (a HuaweiResultCode) String() string {
@@ -4104,6 +4469,24 @@ var HuaweiPortalMode_Strings = map[HuaweiPortalMode]string{
 	HuaweiPortalMode_Value_PADM:          "PADM",
 	HuaweiPortalMode_Value_Redirectional: "Redirectional",
 	HuaweiPortalMode_Value_NonCaptive:    "Non-captive",
+}
+
+func HuaweiPortalMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiPortalMode_Strings[HuaweiPortalMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiPortalMode mapping", value)
+	}
+	return
+}
+
+func HuaweiPortalMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiPortalMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiPortalMode mapping", value)
+	return
 }
 
 func (a HuaweiPortalMode) String() string {
@@ -7314,6 +7697,24 @@ var HuaweiQoSProfileType_Strings = map[HuaweiQoSProfileType]string{
 	HuaweiQoSProfileType_Value_L2TP:         "L2TP",
 }
 
+func HuaweiQoSProfileType_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiQoSProfileType_Strings[HuaweiQoSProfileType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiQoSProfileType mapping", value)
+	}
+	return
+}
+
+func HuaweiQoSProfileType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiQoSProfileType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiQoSProfileType mapping", value)
+	return
+}
+
 func (a HuaweiQoSProfileType) String() string {
 	if str, ok := HuaweiQoSProfileType_Strings[a]; ok {
 		return str
@@ -9214,6 +9615,24 @@ var HuaweiPublicIPAddrState_Strings = map[HuaweiPublicIPAddrState]string{
 	HuaweiPublicIPAddrState_Value_Danger:  "Danger",
 }
 
+func HuaweiPublicIPAddrState_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiPublicIPAddrState_Strings[HuaweiPublicIPAddrState(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiPublicIPAddrState mapping", value)
+	}
+	return
+}
+
+func HuaweiPublicIPAddrState_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiPublicIPAddrState_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiPublicIPAddrState mapping", value)
+	return
+}
+
 func (a HuaweiPublicIPAddrState) String() string {
 	if str, ok := HuaweiPublicIPAddrState_Strings[a]; ok {
 		return str
@@ -9293,6 +9712,24 @@ var HuaweiAuthType_Strings = map[HuaweiAuthType]string{
 	HuaweiAuthType_Value_Tunnel:         "Tunnel",
 	HuaweiAuthType_Value_MIP:            "MIP",
 	HuaweiAuthType_Value_None:           "None",
+}
+
+func HuaweiAuthType_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiAuthType_Strings[HuaweiAuthType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiAuthType mapping", value)
+	}
+	return
+}
+
+func HuaweiAuthType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiAuthType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiAuthType mapping", value)
+	return
 }
 
 func (a HuaweiAuthType) String() string {
@@ -9550,6 +9987,24 @@ var HuaweiPortMirror_Strings = map[HuaweiPortMirror]string{
 	HuaweiPortMirror_Value_UplinkEnable:   "Uplink-Enable",
 	HuaweiPortMirror_Value_DownlinkEnable: "Downlink-Enable",
 	HuaweiPortMirror_Value_Enable:         "Enable",
+}
+
+func HuaweiPortMirror_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiPortMirror_Strings[HuaweiPortMirror(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiPortMirror mapping", value)
+	}
+	return
+}
+
+func HuaweiPortMirror_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiPortMirror_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiPortMirror mapping", value)
+	return
 }
 
 func (a HuaweiPortMirror) String() string {
@@ -10324,6 +10779,24 @@ var HuaweiMNGIPv6_Strings = map[HuaweiMNGIPv6]string{
 	HuaweiMNGIPv6_Value_Supported:   "Supported",
 }
 
+func HuaweiMNGIPv6_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiMNGIPv6_Strings[HuaweiMNGIPv6(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiMNGIPv6 mapping", value)
+	}
+	return
+}
+
+func HuaweiMNGIPv6_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiMNGIPv6_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiMNGIPv6 mapping", value)
+	return
+}
+
 func (a HuaweiMNGIPv6) String() string {
 	if str, ok := HuaweiMNGIPv6_Strings[a]; ok {
 		return str
@@ -10595,6 +11068,24 @@ var HuaweiApplicationType_Strings = map[HuaweiApplicationType]string{
 	HuaweiApplicationType_Value_FullMobile:   "Full-Mobile",
 }
 
+func HuaweiApplicationType_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiApplicationType_Strings[HuaweiApplicationType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiApplicationType mapping", value)
+	}
+	return
+}
+
+func HuaweiApplicationType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiApplicationType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiApplicationType mapping", value)
+	return
+}
+
 func (a HuaweiApplicationType) String() string {
 	if str, ok := HuaweiApplicationType_Strings[a]; ok {
 		return str
@@ -10805,6 +11296,24 @@ var HuaweiUserPriority_Strings = map[HuaweiUserPriority]string{
 	HuaweiUserPriority_Value_Copper: "Copper",
 	HuaweiUserPriority_Value_Silver: "Silver",
 	HuaweiUserPriority_Value_Gold:   "Gold",
+}
+
+func HuaweiUserPriority_GetValueString(value uint32) (str string, err error) {
+	str, ok := HuaweiUserPriority_Strings[HuaweiUserPriority(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in HuaweiUserPriority mapping", value)
+	}
+	return
+}
+
+func HuaweiUserPriority_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range HuaweiUserPriority_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in HuaweiUserPriority mapping", value)
+	return
 }
 
 func (a HuaweiUserPriority) String() string {

@@ -5,16 +5,163 @@ package microsoft
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"net"
 	"strconv"
 
 	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (
 	_Microsoft_VendorID = 311
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	1:  {"MS-CHAP-Response", 2, nil},
+	2:  {"MS-CHAP-Error", 1, nil},
+	3:  {"MS-CHAP-CPW-1", 2, nil},
+	4:  {"MS-CHAP-CPW-2", 2, nil},
+	5:  {"MS-CHAP-LM-Enc-PW", 2, nil},
+	6:  {"MS-CHAP-NT-Enc-PW", 2, nil},
+	7:  {"MS-MPPE-Encryption-Policy", 5, MSMPPEEncryptionPolicy_GetValueString},
+	//8:  {"MS-MPPE-Encryption-Type", 5, nil},
+	8:  {"MS-MPPE-Encryption-Types", 5, MSMPPEEncryptionTypes_GetValueString},
+	9:  {"MS-RAS-Vendor", 5, nil},
+	10: {"MS-CHAP-Domain", 1, nil},
+	11: {"MS-CHAP-Challenge", 2, nil},
+	12: {"MS-CHAP-MPPE-Keys", 2, nil},
+	13: {"MS-BAP-Usage", 5, MSBAPUsage_GetValueString},
+	14: {"MS-Link-Utilization-Threshold", 5, nil},
+	15: {"MS-Link-Drop-Time-Limit", 5, nil},
+	16: {"MS-MPPE-Send-Key", 2, nil},
+	17: {"MS-MPPE-Recv-Key", 2, nil},
+	18: {"MS-RAS-Version", 1, nil},
+	19: {"MS-Old-ARAP-Password", 2, nil},
+	20: {"MS-New-ARAP-Password", 2, nil},
+	21: {"MS-ARAP-PW-Change-Reason", 5, MSARAPPWChangeReason_GetValueString},
+	22: {"MS-Filter", 2, nil},
+	23: {"MS-Acct-Auth-Type", 5, MSAcctAuthType_GetValueString},
+	24: {"MS-Acct-EAP-Type", 5, MSAcctEAPType_GetValueString},
+	25: {"MS-CHAP2-Response", 2, nil},
+	26: {"MS-CHAP2-Success", 2, nil},
+	27: {"MS-CHAP2-CPW", 2, nil},
+	28: {"MS-Primary-DNS-Server", 3, nil},
+	29: {"MS-Secondary-DNS-Server", 3, nil},
+	30: {"MS-Primary-NBNS-Server", 3, nil},
+	31: {"MS-Secondary-NBNS-Server", 3, nil},
+	34: {"MS-RAS-Client-Name", 1, nil},
+	35: {"MS-RAS-Client-Version", 1, nil},
+	36: {"MS-Quarantine-IPFilter", 2, nil},
+	37: {"MS-Quarantine-Session-Timeout", 5, nil},
+	40: {"MS-User-Security-Identity", 1, nil},
+	41: {"MS-Identity-Type", 5, MSIdentityType_GetValueString},
+	42: {"MS-Service-Class", 1, nil},
+	44: {"MS-Quarantine-User-Class", 1, nil},
+	45: {"MS-Quarantine-State", 5, MSQuarantineState_GetValueString},
+	46: {"MS-Quarantine-Grace-Time", 5, nil},
+	47: {"MS-Network-Access-Server-Type", 5, MSNetworkAccessServerType_GetValueString},
+	48: {"MS-AFW-Zone", 5, MSAFWZone_GetValueString},
+	49: {"MS-AFW-Protection-Level", 5, MSAFWProtectionLevel_GetValueString},
+	50: {"MS-Machine-Name", 1, nil},
+	51: {"MS-IPv6-Filter", 2, nil},
+	52: {"MS-IPv4-Remediation-Servers", 2, nil},
+	53: {"MS-IPv6-Remediation-Servers", 2, nil},
+	54: {"MS-RNAP-Not-Quarantine-Capable", 5, MSRNAPNotQuarantineCapable_GetValueString},
+	55: {"MS-Quarantine-SOH", 2, nil},
+	56: {"MS-RAS-Correlation", 2, nil},
+	57: {"MS-Extended-Quarantine-State", 5, MSExtendedQuarantineState_GetValueString},
+	58: {"MS-HCAP-User-Groups", 1, nil},
+	59: {"MS-HCAP-Location-Group-Name", 1, nil},
+	60: {"MS-HCAP-User-Name", 1, nil},
+	61: {"MS-User-IPv4-Address", 3, nil},
+	62: {"MS-User-IPv6-Address", 6, nil},
+	63: {"MS-TSG-Device-Redirection", 5, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"MS-CHAP-Response":               {1, 2, nil},
+	"MS-CHAP-Error":                  {2, 1, nil},
+	"MS-CHAP-CPW-1":                  {3, 2, nil},
+	"MS-CHAP-CPW-2":                  {4, 2, nil},
+	"MS-CHAP-LM-Enc-PW":              {5, 2, nil},
+	"MS-CHAP-NT-Enc-PW":              {6, 2, nil},
+	"MS-MPPE-Encryption-Policy":      {7, 5, MSMPPEEncryptionPolicy_GetValueNumber},
+	"MS-MPPE-Encryption-Type":        {8, 5, nil},
+	"MS-MPPE-Encryption-Types":       {8, 5, MSMPPEEncryptionTypes_GetValueNumber},
+	"MS-RAS-Vendor":                  {9, 5, nil},
+	"MS-CHAP-Domain":                 {10, 1, nil},
+	"MS-CHAP-Challenge":              {11, 2, nil},
+	"MS-CHAP-MPPE-Keys":              {12, 2, nil},
+	"MS-BAP-Usage":                   {13, 5, MSBAPUsage_GetValueNumber},
+	"MS-Link-Utilization-Threshold":  {14, 5, nil},
+	"MS-Link-Drop-Time-Limit":        {15, 5, nil},
+	"MS-MPPE-Send-Key":               {16, 2, nil},
+	"MS-MPPE-Recv-Key":               {17, 2, nil},
+	"MS-RAS-Version":                 {18, 1, nil},
+	"MS-Old-ARAP-Password":           {19, 2, nil},
+	"MS-New-ARAP-Password":           {20, 2, nil},
+	"MS-ARAP-PW-Change-Reason":       {21, 5, MSARAPPWChangeReason_GetValueNumber},
+	"MS-Filter":                      {22, 2, nil},
+	"MS-Acct-Auth-Type":              {23, 5, MSAcctAuthType_GetValueNumber},
+	"MS-Acct-EAP-Type":               {24, 5, MSAcctEAPType_GetValueNumber},
+	"MS-CHAP2-Response":              {25, 2, nil},
+	"MS-CHAP2-Success":               {26, 2, nil},
+	"MS-CHAP2-CPW":                   {27, 2, nil},
+	"MS-Primary-DNS-Server":          {28, 3, nil},
+	"MS-Secondary-DNS-Server":        {29, 3, nil},
+	"MS-Primary-NBNS-Server":         {30, 3, nil},
+	"MS-Secondary-NBNS-Server":       {31, 3, nil},
+	"MS-RAS-Client-Name":             {34, 1, nil},
+	"MS-RAS-Client-Version":          {35, 1, nil},
+	"MS-Quarantine-IPFilter":         {36, 2, nil},
+	"MS-Quarantine-Session-Timeout":  {37, 5, nil},
+	"MS-User-Security-Identity":      {40, 1, nil},
+	"MS-Identity-Type":               {41, 5, MSIdentityType_GetValueNumber},
+	"MS-Service-Class":               {42, 1, nil},
+	"MS-Quarantine-User-Class":       {44, 1, nil},
+	"MS-Quarantine-State":            {45, 5, MSQuarantineState_GetValueNumber},
+	"MS-Quarantine-Grace-Time":       {46, 5, nil},
+	"MS-Network-Access-Server-Type":  {47, 5, MSNetworkAccessServerType_GetValueNumber},
+	"MS-AFW-Zone":                    {48, 5, MSAFWZone_GetValueNumber},
+	"MS-AFW-Protection-Level":        {49, 5, MSAFWProtectionLevel_GetValueNumber},
+	"MS-Machine-Name":                {50, 1, nil},
+	"MS-IPv6-Filter":                 {51, 2, nil},
+	"MS-IPv4-Remediation-Servers":    {52, 2, nil},
+	"MS-IPv6-Remediation-Servers":    {53, 2, nil},
+	"MS-RNAP-Not-Quarantine-Capable": {54, 5, MSRNAPNotQuarantineCapable_GetValueNumber},
+	"MS-Quarantine-SOH":              {55, 2, nil},
+	"MS-RAS-Correlation":             {56, 2, nil},
+	"MS-Extended-Quarantine-State":   {57, 5, MSExtendedQuarantineState_GetValueNumber},
+	"MS-HCAP-User-Groups":            {58, 1, nil},
+	"MS-HCAP-Location-Group-Name":    {59, 1, nil},
+	"MS-HCAP-User-Name":              {60, 1, nil},
+	"MS-User-IPv4-Address":           {61, 3, nil},
+	"MS-User-IPv6-Address":           {62, 6, nil},
+	"MS-TSG-Device-Redirection":      {63, 5, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_Microsoft_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _Microsoft_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute
@@ -788,6 +935,24 @@ var MSMPPEEncryptionPolicy_Strings = map[MSMPPEEncryptionPolicy]string{
 	MSMPPEEncryptionPolicy_Value_EncryptionRequired: "Encryption-Required",
 }
 
+func MSMPPEEncryptionPolicy_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSMPPEEncryptionPolicy_Strings[MSMPPEEncryptionPolicy(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSMPPEEncryptionPolicy mapping", value)
+	}
+	return
+}
+
+func MSMPPEEncryptionPolicy_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSMPPEEncryptionPolicy_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSMPPEEncryptionPolicy mapping", value)
+	return
+}
+
 func (a MSMPPEEncryptionPolicy) String() string {
 	if str, ok := MSMPPEEncryptionPolicy_Strings[a]; ok {
 		return str
@@ -910,6 +1075,24 @@ var MSMPPEEncryptionTypes_Strings = map[MSMPPEEncryptionTypes]string{
 	MSMPPEEncryptionTypes_Value_RC440bitAllowed:      "RC4-40bit-Allowed",
 	MSMPPEEncryptionTypes_Value_RC4128bitAllowed:     "RC4-128bit-Allowed",
 	MSMPPEEncryptionTypes_Value_RC440or128BitAllowed: "RC4-40or128-bit-Allowed",
+}
+
+func MSMPPEEncryptionTypes_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSMPPEEncryptionTypes_Strings[MSMPPEEncryptionTypes(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSMPPEEncryptionTypes mapping", value)
+	}
+	return
+}
+
+func MSMPPEEncryptionTypes_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSMPPEEncryptionTypes_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSMPPEEncryptionTypes mapping", value)
+	return
 }
 
 func (a MSMPPEEncryptionTypes) String() string {
@@ -1352,6 +1535,24 @@ var MSBAPUsage_Strings = map[MSBAPUsage]string{
 	MSBAPUsage_Value_NotAllowed: "Not-Allowed",
 	MSBAPUsage_Value_Allowed:    "Allowed",
 	MSBAPUsage_Value_Required:   "Required",
+}
+
+func MSBAPUsage_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSBAPUsage_Strings[MSBAPUsage(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSBAPUsage mapping", value)
+	}
+	return
+}
+
+func MSBAPUsage_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSBAPUsage_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSBAPUsage mapping", value)
+	return
 }
 
 func (a MSBAPUsage) String() string {
@@ -2063,6 +2264,24 @@ var MSARAPPWChangeReason_Strings = map[MSARAPPWChangeReason]string{
 	MSARAPPWChangeReason_Value_PasswordTooShort:            "Password-Too-Short",
 }
 
+func MSARAPPWChangeReason_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSARAPPWChangeReason_Strings[MSARAPPWChangeReason(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSARAPPWChangeReason mapping", value)
+	}
+	return
+}
+
+func MSARAPPWChangeReason_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSARAPPWChangeReason_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSARAPPWChangeReason mapping", value)
+	return
+}
+
 func (a MSARAPPWChangeReason) String() string {
 	if str, ok := MSARAPPWChangeReason_Strings[a]; ok {
 		return str
@@ -2228,6 +2447,24 @@ var MSAcctAuthType_Strings = map[MSAcctAuthType]string{
 	MSAcctAuthType_Value_EAP:     "EAP",
 }
 
+func MSAcctAuthType_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSAcctAuthType_Strings[MSAcctAuthType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSAcctAuthType mapping", value)
+	}
+	return
+}
+
+func MSAcctAuthType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSAcctAuthType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSAcctAuthType mapping", value)
+	return
+}
+
 func (a MSAcctAuthType) String() string {
 	if str, ok := MSAcctAuthType_Strings[a]; ok {
 		return str
@@ -2295,6 +2532,24 @@ var MSAcctEAPType_Strings = map[MSAcctEAPType]string{
 	MSAcctEAPType_Value_OTP:              "OTP",
 	MSAcctEAPType_Value_GenericTokenCard: "Generic-Token-Card",
 	MSAcctEAPType_Value_TLS:              "TLS",
+}
+
+func MSAcctEAPType_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSAcctEAPType_Strings[MSAcctEAPType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSAcctEAPType mapping", value)
+	}
+	return
+}
+
+func MSAcctEAPType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSAcctEAPType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSAcctEAPType mapping", value)
+	return
 }
 
 func (a MSAcctEAPType) String() string {
@@ -3329,6 +3584,24 @@ var MSIdentityType_Strings = map[MSIdentityType]string{
 	MSIdentityType_Value_IgnoreUserLookupFailure: "Ignore-User-Lookup-Failure",
 }
 
+func MSIdentityType_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSIdentityType_Strings[MSIdentityType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSIdentityType mapping", value)
+	}
+	return
+}
+
+func MSIdentityType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSIdentityType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSIdentityType mapping", value)
+	return
+}
+
 func (a MSIdentityType) String() string {
 	if str, ok := MSIdentityType_Strings[a]; ok {
 		return str
@@ -3584,6 +3857,24 @@ var MSQuarantineState_Strings = map[MSQuarantineState]string{
 	MSQuarantineState_Value_Probation:  "Probation",
 }
 
+func MSQuarantineState_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSQuarantineState_Strings[MSQuarantineState(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSQuarantineState mapping", value)
+	}
+	return
+}
+
+func MSQuarantineState_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSQuarantineState_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSQuarantineState mapping", value)
+	return
+}
+
 func (a MSQuarantineState) String() string {
 	if str, ok := MSQuarantineState_Strings[a]; ok {
 		return str
@@ -3716,6 +4007,24 @@ var MSNetworkAccessServerType_Strings = map[MSNetworkAccessServerType]string{
 	MSNetworkAccessServerType_Value_HCAPServer:            "HCAP-Server",
 }
 
+func MSNetworkAccessServerType_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSNetworkAccessServerType_Strings[MSNetworkAccessServerType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSNetworkAccessServerType mapping", value)
+	}
+	return
+}
+
+func MSNetworkAccessServerType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSNetworkAccessServerType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSNetworkAccessServerType mapping", value)
+	return
+}
+
 func (a MSNetworkAccessServerType) String() string {
 	if str, ok := MSNetworkAccessServerType_Strings[a]; ok {
 		return str
@@ -3783,6 +4092,24 @@ var MSAFWZone_Strings = map[MSAFWZone]string{
 	MSAFWZone_Value_MSAFWZoneProtectedPolicy:   "MS-AFW-Zone-Protected-Policy",
 }
 
+func MSAFWZone_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSAFWZone_Strings[MSAFWZone(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSAFWZone mapping", value)
+	}
+	return
+}
+
+func MSAFWZone_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSAFWZone_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSAFWZone mapping", value)
+	return
+}
+
 func (a MSAFWZone) String() string {
 	if str, ok := MSAFWZone_Strings[a]; ok {
 		return str
@@ -3846,6 +4173,24 @@ const (
 var MSAFWProtectionLevel_Strings = map[MSAFWProtectionLevel]string{
 	MSAFWProtectionLevel_Value_HECPResponseSignOnly:       "HECP-Response-Sign-Only",
 	MSAFWProtectionLevel_Value_HECPResponseSignAndEncrypt: "HECP-Response-Sign-And-Encrypt",
+}
+
+func MSAFWProtectionLevel_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSAFWProtectionLevel_Strings[MSAFWProtectionLevel(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSAFWProtectionLevel mapping", value)
+	}
+	return
+}
+
+func MSAFWProtectionLevel_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSAFWProtectionLevel_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSAFWProtectionLevel mapping", value)
+	return
 }
 
 func (a MSAFWProtectionLevel) String() string {
@@ -4289,6 +4634,24 @@ var MSRNAPNotQuarantineCapable_Strings = map[MSRNAPNotQuarantineCapable]string{
 	MSRNAPNotQuarantineCapable_Value_SoHNotSent: "SoH-Not-Sent",
 }
 
+func MSRNAPNotQuarantineCapable_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSRNAPNotQuarantineCapable_Strings[MSRNAPNotQuarantineCapable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSRNAPNotQuarantineCapable mapping", value)
+	}
+	return
+}
+
+func MSRNAPNotQuarantineCapable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSRNAPNotQuarantineCapable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSRNAPNotQuarantineCapable mapping", value)
+	return
+}
+
 func (a MSRNAPNotQuarantineCapable) String() string {
 	if str, ok := MSRNAPNotQuarantineCapable_Strings[a]; ok {
 		return str
@@ -4544,6 +4907,24 @@ var MSExtendedQuarantineState_Strings = map[MSExtendedQuarantineState]string{
 	MSExtendedQuarantineState_Value_Infected:   "Infected",
 	MSExtendedQuarantineState_Value_Unknown:    "Unknown",
 	MSExtendedQuarantineState_Value_NoData:     "No-Data",
+}
+
+func MSExtendedQuarantineState_GetValueString(value uint32) (str string, err error) {
+	str, ok := MSExtendedQuarantineState_Strings[MSExtendedQuarantineState(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MSExtendedQuarantineState mapping", value)
+	}
+	return
+}
+
+func MSExtendedQuarantineState_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MSExtendedQuarantineState_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MSExtendedQuarantineState mapping", value)
+	return
 }
 
 func (a MSExtendedQuarantineState) String() string {

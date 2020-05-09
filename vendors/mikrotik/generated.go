@@ -3,16 +3,103 @@
 package mikrotik
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 
 	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (
 	_Mikrotik_VendorID = 14988
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	1:  {"Mikrotik-Recv-Limit", 5, nil},
+	2:  {"Mikrotik-Xmit-Limit", 5, nil},
+	3:  {"Mikrotik-Group", 1, nil},
+	4:  {"Mikrotik-Wireless-Forward", 5, nil},
+	5:  {"Mikrotik-Wireless-Skip-Dot1x", 5, nil},
+	6:  {"Mikrotik-Wireless-Enc-Algo", 5, MikrotikWirelessEncAlgo_GetValueString},
+	7:  {"Mikrotik-Wireless-Enc-Key", 1, nil},
+	8:  {"Mikrotik-Rate-Limit", 1, nil},
+	9:  {"Mikrotik-Realm", 1, nil},
+	10: {"Mikrotik-Host-IP", 3, nil},
+	11: {"Mikrotik-Mark-Id", 1, nil},
+	12: {"Mikrotik-Advertise-URL", 1, nil},
+	13: {"Mikrotik-Advertise-Interval", 5, nil},
+	14: {"Mikrotik-Recv-Limit-Gigawords", 5, nil},
+	15: {"Mikrotik-Xmit-Limit-Gigawords", 5, nil},
+	16: {"Mikrotik-Wireless-PSK", 1, nil},
+	17: {"Mikrotik-Total-Limit", 5, nil},
+	18: {"Mikrotik-Total-Limit-Gigawords", 5, nil},
+	19: {"Mikrotik-Address-List", 1, nil},
+	20: {"Mikrotik-Wireless-MPKey", 1, nil},
+	21: {"Mikrotik-Wireless-Comment", 1, nil},
+	22: {"Mikrotik-Delegated-IPv6-Pool", 1, nil},
+	23: {"Mikrotik-DHCP-Option-Set", 1, nil},
+	24: {"Mikrotik-DHCP-Option-Param-STR1", 1, nil},
+	25: {"Mikrotik-DHCP-Option-ParamSTR2", 1, nil},
+	26: {"Mikrotik-Wireless-VLANID", 5, nil},
+	27: {"Mikrotik-Wireless-VLANID-Type", 5, MikrotikWirelessVLANIDType_GetValueString},
+	28: {"Mikrotik-Wireless-Minsignal", 1, nil},
+	29: {"Mikrotik-Wireless-Maxsignal", 1, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"Mikrotik-Recv-Limit":             {1, 5, nil},
+	"Mikrotik-Xmit-Limit":             {2, 5, nil},
+	"Mikrotik-Group":                  {3, 1, nil},
+	"Mikrotik-Wireless-Forward":       {4, 5, nil},
+	"Mikrotik-Wireless-Skip-Dot1x":    {5, 5, nil},
+	"Mikrotik-Wireless-Enc-Algo":      {6, 5, MikrotikWirelessEncAlgo_GetValueNumber},
+	"Mikrotik-Wireless-Enc-Key":       {7, 1, nil},
+	"Mikrotik-Rate-Limit":             {8, 1, nil},
+	"Mikrotik-Realm":                  {9, 1, nil},
+	"Mikrotik-Host-IP":                {10, 3, nil},
+	"Mikrotik-Mark-Id":                {11, 1, nil},
+	"Mikrotik-Advertise-URL":          {12, 1, nil},
+	"Mikrotik-Advertise-Interval":     {13, 5, nil},
+	"Mikrotik-Recv-Limit-Gigawords":   {14, 5, nil},
+	"Mikrotik-Xmit-Limit-Gigawords":   {15, 5, nil},
+	"Mikrotik-Wireless-PSK":           {16, 1, nil},
+	"Mikrotik-Total-Limit":            {17, 5, nil},
+	"Mikrotik-Total-Limit-Gigawords":  {18, 5, nil},
+	"Mikrotik-Address-List":           {19, 1, nil},
+	"Mikrotik-Wireless-MPKey":         {20, 1, nil},
+	"Mikrotik-Wireless-Comment":       {21, 1, nil},
+	"Mikrotik-Delegated-IPv6-Pool":    {22, 1, nil},
+	"Mikrotik-DHCP-Option-Set":        {23, 1, nil},
+	"Mikrotik-DHCP-Option-Param-STR1": {24, 1, nil},
+	"Mikrotik-DHCP-Option-ParamSTR2":  {25, 1, nil},
+	"Mikrotik-Wireless-VLANID":        {26, 5, nil},
+	"Mikrotik-Wireless-VLANID-Type":   {27, 5, MikrotikWirelessVLANIDType_GetValueNumber},
+	"Mikrotik-Wireless-Minsignal":     {28, 1, nil},
+	"Mikrotik-Wireless-Maxsignal":     {29, 1, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_Mikrotik_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _Mikrotik_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute
@@ -464,6 +551,24 @@ var MikrotikWirelessEncAlgo_Strings = map[MikrotikWirelessEncAlgo]string{
 	MikrotikWirelessEncAlgo_Value_One04BitWEP:  "104-bit-WEP",
 	MikrotikWirelessEncAlgo_Value_AESCCM:       "AES-CCM",
 	MikrotikWirelessEncAlgo_Value_TKIP:         "TKIP",
+}
+
+func MikrotikWirelessEncAlgo_GetValueString(value uint32) (str string, err error) {
+	str, ok := MikrotikWirelessEncAlgo_Strings[MikrotikWirelessEncAlgo(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MikrotikWirelessEncAlgo mapping", value)
+	}
+	return
+}
+
+func MikrotikWirelessEncAlgo_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MikrotikWirelessEncAlgo_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MikrotikWirelessEncAlgo mapping", value)
+	return
 }
 
 func (a MikrotikWirelessEncAlgo) String() string {
@@ -2142,6 +2247,24 @@ const (
 var MikrotikWirelessVLANIDType_Strings = map[MikrotikWirelessVLANIDType]string{
 	MikrotikWirelessVLANIDType_Value_Eight021q:  "802.1q",
 	MikrotikWirelessVLANIDType_Value_Eight021ad: "802.1ad",
+}
+
+func MikrotikWirelessVLANIDType_GetValueString(value uint32) (str string, err error) {
+	str, ok := MikrotikWirelessVLANIDType_Strings[MikrotikWirelessVLANIDType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in MikrotikWirelessVLANIDType mapping", value)
+	}
+	return
+}
+
+func MikrotikWirelessVLANIDType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range MikrotikWirelessVLANIDType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in MikrotikWirelessVLANIDType mapping", value)
+	return
 }
 
 func (a MikrotikWirelessVLANIDType) String() string {

@@ -99,6 +99,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		attrs = append(attrs, attr)
 	}
 
+	if len(dict.Values) > 0 {
+		baseImports["fmt"] = struct{}{}
+	}
+
 	dictionary.SortAttributes(attrs)
 
 	externalAttributes := make([]*externalAttribute, 0, len(g.ExternalAttributes))
@@ -208,6 +212,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			}
 		}
 
+		if len(vendor.Values) > 0 {
+			baseImports["fmt"] = struct{}{}
+		}
+
 		vendorAttributes := make([]*dictionary.Attribute, len(vendor.Attributes))
 		copy(vendorAttributes, vendor.Attributes)
 		dictionary.SortAttributes(vendorAttributes)
@@ -247,6 +255,8 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 	}
 	if len(vendors) > 0 {
 		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"`)
+		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"`)
+		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"`)
 	}
 	if len(externalAttributes) > 0 {
 		printedNewLine := false
@@ -301,6 +311,56 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		p(&w, `)`)
 	}
 
+	////attrOIDMap
+	//p(&w)
+	//p(&w, `var attrOIDMap = map[radius.Type]radius.NameType {`)
+	//for _, attr := range dict.Attributes {
+	//	valueMapping := "nil"
+	//	for _, value := range dict.Values {
+	//		if value.Attribute == attr.Name {
+	//			valueMapping = identifier(value.Attribute) + `_GetValueString`
+	//		}
+	//	}
+	//
+	//	p(&w, `	`, strconv.Itoa(attr.OID[0]), `:{ "`+attr.Name+`", `, strconv.Itoa(int(attr.Type)), `, `, valueMapping, `},`)
+	//}
+	//p(&w, `}`)
+	//
+	////attrNameMap
+	//p(&w)
+	//p(&w, `var attrNameMap = map[string]radius.OIDType {`)
+	//for _, attr := range dict.Attributes {
+	//	valueMapping := "nil"
+	//	for _, value := range dict.Values {
+	//		if value.Attribute == attr.Name {
+	//			valueMapping = identifier(value.Attribute) + `_GetValueNumber`
+	//		}
+	//	}
+	//
+	//	p(&w, `	`, `"`, attr.Name, `"`, `:{ `+strconv.Itoa(attr.OID[0])+`, `, strconv.Itoa(int(attr.Type)), `, `, valueMapping, `},`)
+	//}
+	//p(&w, `}`)
+	//
+	////GetAttrName function
+	//p(&w)
+	//p(&w, `func GetAttrName(T byte) (string, dictionary.AttributeType) {`)
+	//p(&w, `	`, `name, ok := attrOIDMap[radius.Type(T)]`)
+	//p(&w, `	`, `if ok {`)
+	//p(&w, `	`, `	`, `return name.Name, name.T`)
+	//p(&w, `	`, `}`)
+	//p(&w, `	`, `return "", 2`)
+	//p(&w, `}`)
+	//
+	////GetAttrOID function
+	//p(&w)
+	//p(&w, `func GetAttrOID(name string) (radius.Type, dictionary.AttributeType) {`)
+	//p(&w, `	`, `t, ok := attrNameMap[name]`)
+	//p(&w, `	`, `if ok {`)
+	//p(&w, `	`, `	`, `return t.OID, t.T`)
+	//p(&w, `	`, `}`)
+	//p(&w, `	`, `return -1, dictionary.AttributeOctets`)
+	//p(&w, `}`)
+
 	for _, attr := range attrs {
 		switch attr.Type {
 		case dictionary.AttributeString, dictionary.AttributeOctets, dictionary.AttributeABinary:
@@ -328,7 +388,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		case dictionary.AttributeInteger64:
 			g.genAttributeInteger(&w, attr, values, 64, nil)
 		case dictionary.AttributeByte:
-			g.genAttributeByte(&w, attr, nil)
+			g.genAttributeByte(&w, attr, values, nil)
 		}
 	}
 
@@ -355,7 +415,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			case dictionary.AttributeInteger64:
 				g.genAttributeInteger(&w, attr, vendor.Values, 64, vendor)
 			case dictionary.AttributeByte:
-				g.genAttributeByte(&w, attr, vendor)
+				g.genAttributeByte(&w, attr, vendor.Values, vendor)
 			}
 		}
 	}
