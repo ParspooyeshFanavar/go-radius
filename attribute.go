@@ -1,6 +1,7 @@
 package radius
 
 import (
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bytes"
 	"crypto/md5"
 	"encoding/binary"
@@ -17,6 +18,18 @@ var ErrNoAttribute = errors.New("radius: attribute not found")
 
 // Attribute is a wire encoded RADIUS attribute.
 type Attribute []byte
+
+type NameType struct {
+	Name         string
+	T            dictionary.AttributeType
+	ValueMapFunc func(uint32) (string, error)
+}
+
+type OIDType struct {
+	OID          Type
+	T            dictionary.AttributeType
+	ValueMapFunc func(string) (uint32, error)
+}
 
 // Integer returns the given attribute as an integer. An error is returned if
 // the attribute is not 4 bytes long.

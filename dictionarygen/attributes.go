@@ -888,6 +888,28 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	p(w, `}`)
 
+	if len(values) > 0 {
+		p(w)
+		p(w, `func `, ident, `_GetValueString(value uint32) (str string, err error) {`)
+		p(w, `	str, ok := `, ident, `_Strings[`, ident, "(value)]")
+		p(w, `	if !ok {`)
+		p(w, `		err = fmt.Errorf("value: %d not found in `, ident, ` mapping", value)`)
+		p(w, `	}`)
+		p(w, `	return`)
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueNumber(value string) (str uint32, err error) {`)
+		p(w, `	for k, v := range `, ident, `_Strings {`)
+		p(w, `		if v == value {`)
+		p(w, `			return uint32(k), nil`)
+		p(w, `		}`)
+		p(w, `	}`)
+		p(w, `	err = fmt.Errorf("value: %s not found in `, ident, ` mapping", value)`)
+		p(w, `	return`)
+		p(w, `}`)
+	}
+
 	p(w)
 	p(w, `func (a `, ident, `) String() string {`)
 	p(w, `	if str, ok := `, ident, `_Strings[a]; ok {`)
@@ -1054,7 +1076,19 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	p(w, `}`)
 }
 
-func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, vendor *dictionary.Vendor) {
+func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, allValues []*dictionary.Value, vendor *dictionary.Vendor) {
+	var values []*dictionary.Value
+
+	for _, value := range allValues {
+		if value.Attribute == attr.Name {
+			if len(values) > 0 && values[len(values)-1].Number == value.Number {
+				values[len(values)-1] = value
+			} else {
+				values = append(values, value)
+			}
+		}
+	}
+
 	ident := identifier(attr.Name)
 	var vendorIdent string
 	if vendor != nil {
@@ -1135,4 +1169,36 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
 	p(w, `}`)
+
+	// Values
+	if len(values) > 0 {
+
+		p(w)
+		p(w, `var `, ident, `_Strings = map[uint32]string{`)
+		for _, value := range values {
+			p(w, `	`, strconv.Itoa(value.Number), `: `, strconv.Quote(value.Name), `,`)
+		}
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueString(value uint32) (str string, err error) {`)
+		p(w, `	str, ok := `, ident, `_Strings[value]`)
+		p(w, `	if !ok {`)
+		p(w, `		err = fmt.Errorf("value: %d not found in `, ident, ` mapping", value)`)
+		p(w, `	}`)
+		p(w, `	return`)
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueNumber(value string) (str uint32, err error) {`)
+		p(w, `	for k, v := range `, ident, `_Strings {`)
+		p(w, `		if v == value {`)
+		p(w, `			return k, nil`)
+		p(w, `		}`)
+		p(w, `	}`)
+		p(w, `	err = fmt.Errorf("value: %s not found in `, ident, ` mapping", value)`)
+		p(w, `	return`)
+		p(w, `}`)
+
+	}
 }

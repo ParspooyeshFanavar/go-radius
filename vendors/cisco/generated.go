@@ -3,15 +3,262 @@
 package cisco
 
 import (
+	"fmt"
 	"strconv"
 
 	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (
 	_Cisco_VendorID = 9
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	1:   {"Cisco-AVPair", 1, nil},
+	2:   {"Cisco-NAS-Port", 1, nil},
+	3:   {"Cisco-Fax-Account-Id-Origin", 1, nil},
+	4:   {"Cisco-Fax-Msg-Id", 1, nil},
+	5:   {"Cisco-Fax-Pages", 1, nil},
+	6:   {"Cisco-Fax-Coverpage-Flag", 1, nil},
+	7:   {"Cisco-Fax-Modem-Time", 1, nil},
+	8:   {"Cisco-Fax-Connect-Speed", 1, nil},
+	9:   {"Cisco-Fax-Recipient-Count", 1, nil},
+	10:  {"Cisco-Fax-Process-Abort-Flag", 1, nil},
+	11:  {"Cisco-Fax-Dsn-Address", 1, nil},
+	12:  {"Cisco-Fax-Dsn-Flag", 1, nil},
+	13:  {"Cisco-Fax-Mdn-Address", 1, nil},
+	14:  {"Cisco-Fax-Mdn-Flag", 1, nil},
+	15:  {"Cisco-Fax-Auth-Status", 1, nil},
+	16:  {"Cisco-Email-Server-Address", 1, nil},
+	17:  {"Cisco-Email-Server-Ack-Flag", 1, nil},
+	18:  {"Cisco-Gateway-Id", 1, nil},
+	19:  {"Cisco-Call-Type", 1, nil},
+	20:  {"Cisco-Port-Used", 1, nil},
+	21:  {"Cisco-Abort-Cause", 1, nil},
+	23:  {"h323-remote-address", 1, nil},
+	24:  {"h323-conf-id", 1, nil},
+	25:  {"h323-setup-time", 1, nil},
+	26:  {"h323-call-origin", 1, nil},
+	27:  {"h323-call-type", 1, nil},
+	28:  {"h323-connect-time", 1, nil},
+	29:  {"h323-disconnect-time", 1, nil},
+	30:  {"h323-disconnect-cause", 1, nil},
+	31:  {"h323-voice-quality", 1, nil},
+	33:  {"h323-gw-id", 1, nil},
+	35:  {"h323-incoming-conf-id", 1, nil},
+	37:  {"Cisco-Policy-Up", 1, nil},
+	38:  {"Cisco-Policy-Down", 1, nil},
+	46:  {"Cisco-Relay-Information-Option", 1, nil},
+	47:  {"Cisco-DHCP-User-Class", 1, nil},
+	48:  {"Cisco-DHCP-Vendor-Class", 1, nil},
+	50:  {"Cisco-DHCP-Relay-GiAddr", 1, nil},
+	51:  {"Cisco-Service-Name", 1, nil},
+	52:  {"Cisco-Parent-Session-Id", 1, nil},
+	55:  {"Cisco-Sub-QoS-Pol-In", 1, nil},
+	56:  {"Cisco-Sub-QoS-Pol-Out", 1, nil},
+	57:  {"Cisco-In-ACL", 1, nil},
+	58:  {"Cisco-Out-ACL", 1, nil},
+	59:  {"Cisco-Sub-PBR-Policy-In", 1, nil},
+	60:  {"Cisco-Sub-Activate-Service", 1, nil},
+	61:  {"Cisco-IPv6-In-ACL", 1, nil},
+	62:  {"Cisco-IPv6-Out-ACL", 1, nil},
+	63:  {"Cisco-Sub-Deactivate-Service", 1, nil},
+	65:  {"Cisco-DHCP-Subscriber-Id", 1, nil},
+	66:  {"Cisco-DHCPv6-Link-Address", 1, nil},
+	100: {"sip-conf-id", 1, nil},
+	101: {"h323-credit-amount", 1, nil},
+	102: {"h323-credit-time", 1, nil},
+	103: {"h323-return-code", 1, nil},
+	104: {"h323-prompt-id", 1, nil},
+	105: {"h323-time-and-day", 1, nil},
+	106: {"h323-redirect-number", 1, nil},
+	107: {"h323-preferred-lang", 1, nil},
+	108: {"h323-redirect-ip-address", 1, nil},
+	109: {"h323-billing-model", 1, nil},
+	110: {"h323-currency", 1, nil},
+	111: {"subscriber", 1, nil},
+	112: {"gw-rxd-cdn", 1, nil},
+	113: {"gw-final-xlated-cdn", 1, nil},
+	114: {"remote-media-address", 1, nil},
+	115: {"release-source", 1, nil},
+	116: {"gw-rxd-cgn", 1, nil},
+	117: {"gw-final-xlated-cgn", 1, nil},
+	141: {"call-id", 1, nil},
+	142: {"session-protocol", 1, nil},
+	143: {"method", 1, nil},
+	144: {"prev-hop-via", 1, nil},
+	145: {"prev-hop-ip", 1, nil},
+	146: {"incoming-req-uri", 1, nil},
+	147: {"outgoing-req-uri", 1, nil},
+	148: {"next-hop-ip", 1, nil},
+	149: {"next-hop-dn", 1, nil},
+	150: {"sip-hdr", 1, nil},
+	151: {"dsp-id", 1, nil},
+	187: {"Cisco-Multilink-ID", 5, nil},
+	188: {"Cisco-Num-In-Multilink", 5, nil},
+	190: {"Cisco-Pre-Input-Octets", 5, nil},
+	191: {"Cisco-Pre-Output-Octets", 5, nil},
+	192: {"Cisco-Pre-Input-Packets", 5, nil},
+	193: {"Cisco-Pre-Output-Packets", 5, nil},
+	194: {"Cisco-Maximum-Time", 5, nil},
+	195: {"Cisco-Disconnect-Cause", 5, CiscoDisconnectCause_GetValueString},
+	197: {"Cisco-Data-Rate", 5, nil},
+	198: {"Cisco-PreSession-Time", 5, nil},
+	208: {"Cisco-PW-Lifetime", 5, nil},
+	209: {"Cisco-IP-Direct", 5, nil},
+	210: {"Cisco-PPP-VJ-Slot-Comp", 5, nil},
+	212: {"Cisco-PPP-Async-Map", 5, nil},
+	217: {"Cisco-IP-Pool-Definition", 1, nil},
+	218: {"Cisco-Assign-IP-Pool", 5, nil},
+	228: {"Cisco-Route-IP", 5, nil},
+	233: {"Cisco-Link-Compression", 5, nil},
+	234: {"Cisco-Target-Util", 5, nil},
+	235: {"Cisco-Maximum-Channels", 5, nil},
+	242: {"Cisco-Data-Filter", 5, nil},
+	243: {"Cisco-Call-Filter", 5, nil},
+	244: {"Cisco-Idle-Limit", 5, nil},
+	249: {"Cisco-Subscriber-Password", 1, nil},
+	250: {"Cisco-Account-Info", 1, nil},
+	251: {"Cisco-Service-Info", 1, nil},
+	252: {"Cisco-Command-Code", 1, nil},
+	253: {"Cisco-Control-Info", 1, nil},
+	255: {"Cisco-Xmit-Rate", 5, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"Cisco-AVPair":                   {1, 1, nil},
+	"Cisco-NAS-Port":                 {2, 1, nil},
+	"Cisco-Fax-Account-Id-Origin":    {3, 1, nil},
+	"Cisco-Fax-Msg-Id":               {4, 1, nil},
+	"Cisco-Fax-Pages":                {5, 1, nil},
+	"Cisco-Fax-Coverpage-Flag":       {6, 1, nil},
+	"Cisco-Fax-Modem-Time":           {7, 1, nil},
+	"Cisco-Fax-Connect-Speed":        {8, 1, nil},
+	"Cisco-Fax-Recipient-Count":      {9, 1, nil},
+	"Cisco-Fax-Process-Abort-Flag":   {10, 1, nil},
+	"Cisco-Fax-Dsn-Address":          {11, 1, nil},
+	"Cisco-Fax-Dsn-Flag":             {12, 1, nil},
+	"Cisco-Fax-Mdn-Address":          {13, 1, nil},
+	"Cisco-Fax-Mdn-Flag":             {14, 1, nil},
+	"Cisco-Fax-Auth-Status":          {15, 1, nil},
+	"Cisco-Email-Server-Address":     {16, 1, nil},
+	"Cisco-Email-Server-Ack-Flag":    {17, 1, nil},
+	"Cisco-Gateway-Id":               {18, 1, nil},
+	"Cisco-Call-Type":                {19, 1, nil},
+	"Cisco-Port-Used":                {20, 1, nil},
+	"Cisco-Abort-Cause":              {21, 1, nil},
+	"h323-remote-address":            {23, 1, nil},
+	"h323-conf-id":                   {24, 1, nil},
+	"h323-setup-time":                {25, 1, nil},
+	"h323-call-origin":               {26, 1, nil},
+	"h323-call-type":                 {27, 1, nil},
+	"h323-connect-time":              {28, 1, nil},
+	"h323-disconnect-time":           {29, 1, nil},
+	"h323-disconnect-cause":          {30, 1, nil},
+	"h323-voice-quality":             {31, 1, nil},
+	"h323-gw-id":                     {33, 1, nil},
+	"h323-incoming-conf-id":          {35, 1, nil},
+	"Cisco-Policy-Up":                {37, 1, nil},
+	"Cisco-Policy-Down":              {38, 1, nil},
+	"Cisco-Relay-Information-Option": {46, 1, nil},
+	"Cisco-DHCP-User-Class":          {47, 1, nil},
+	"Cisco-DHCP-Vendor-Class":        {48, 1, nil},
+	"Cisco-DHCP-Relay-GiAddr":        {50, 1, nil},
+	"Cisco-Service-Name":             {51, 1, nil},
+	"Cisco-Parent-Session-Id":        {52, 1, nil},
+	"Cisco-Sub-QoS-Pol-In":           {55, 1, nil},
+	"Cisco-Sub-QoS-Pol-Out":          {56, 1, nil},
+	"Cisco-In-ACL":                   {57, 1, nil},
+	"Cisco-Out-ACL":                  {58, 1, nil},
+	"Cisco-Sub-PBR-Policy-In":        {59, 1, nil},
+	"Cisco-Sub-Activate-Service":     {60, 1, nil},
+	"Cisco-IPv6-In-ACL":              {61, 1, nil},
+	"Cisco-IPv6-Out-ACL":             {62, 1, nil},
+	"Cisco-Sub-Deactivate-Service":   {63, 1, nil},
+	"Cisco-DHCP-Subscriber-Id":       {65, 1, nil},
+	"Cisco-DHCPv6-Link-Address":      {66, 1, nil},
+	"sip-conf-id":                    {100, 1, nil},
+	"h323-credit-amount":             {101, 1, nil},
+	"h323-credit-time":               {102, 1, nil},
+	"h323-return-code":               {103, 1, nil},
+	"h323-prompt-id":                 {104, 1, nil},
+	"h323-time-and-day":              {105, 1, nil},
+	"h323-redirect-number":           {106, 1, nil},
+	"h323-preferred-lang":            {107, 1, nil},
+	"h323-redirect-ip-address":       {108, 1, nil},
+	"h323-billing-model":             {109, 1, nil},
+	"h323-currency":                  {110, 1, nil},
+	"subscriber":                     {111, 1, nil},
+	"gw-rxd-cdn":                     {112, 1, nil},
+	"gw-final-xlated-cdn":            {113, 1, nil},
+	"remote-media-address":           {114, 1, nil},
+	"release-source":                 {115, 1, nil},
+	"gw-rxd-cgn":                     {116, 1, nil},
+	"gw-final-xlated-cgn":            {117, 1, nil},
+	"call-id":                        {141, 1, nil},
+	"session-protocol":               {142, 1, nil},
+	"method":                         {143, 1, nil},
+	"prev-hop-via":                   {144, 1, nil},
+	"prev-hop-ip":                    {145, 1, nil},
+	"incoming-req-uri":               {146, 1, nil},
+	"outgoing-req-uri":               {147, 1, nil},
+	"next-hop-ip":                    {148, 1, nil},
+	"next-hop-dn":                    {149, 1, nil},
+	"sip-hdr":                        {150, 1, nil},
+	"dsp-id":                         {151, 1, nil},
+	"Cisco-Multilink-ID":             {187, 5, nil},
+	"Cisco-Num-In-Multilink":         {188, 5, nil},
+	"Cisco-Pre-Input-Octets":         {190, 5, nil},
+	"Cisco-Pre-Output-Octets":        {191, 5, nil},
+	"Cisco-Pre-Input-Packets":        {192, 5, nil},
+	"Cisco-Pre-Output-Packets":       {193, 5, nil},
+	"Cisco-Maximum-Time":             {194, 5, nil},
+	"Cisco-Disconnect-Cause":         {195, 5, CiscoDisconnectCause_GetValueNumber},
+	"Cisco-Data-Rate":                {197, 5, nil},
+	"Cisco-PreSession-Time":          {198, 5, nil},
+	"Cisco-PW-Lifetime":              {208, 5, nil},
+	"Cisco-IP-Direct":                {209, 5, nil},
+	"Cisco-PPP-VJ-Slot-Comp":         {210, 5, nil},
+	"Cisco-PPP-Async-Map":            {212, 5, nil},
+	"Cisco-IP-Pool-Definition":       {217, 1, nil},
+	"Cisco-Assign-IP-Pool":           {218, 5, nil},
+	"Cisco-Route-IP":                 {228, 5, nil},
+	"Cisco-Link-Compression":         {233, 5, nil},
+	"Cisco-Target-Util":              {234, 5, nil},
+	"Cisco-Maximum-Channels":         {235, 5, nil},
+	"Cisco-Data-Filter":              {242, 5, nil},
+	"Cisco-Call-Filter":              {243, 5, nil},
+	"Cisco-Idle-Limit":               {244, 5, nil},
+	"Cisco-Subscriber-Password":      {249, 1, nil},
+	"Cisco-Account-Info":             {250, 1, nil},
+	"Cisco-Service-Info":             {251, 1, nil},
+	"Cisco-Command-Code":             {252, 1, nil},
+	"Cisco-Control-Info":             {253, 1, nil},
+	"Cisco-Xmit-Rate":                {255, 5, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_Cisco_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _Cisco_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute
@@ -8186,6 +8433,24 @@ var CiscoDisconnectCause_Strings = map[CiscoDisconnectCause]string{
 	CiscoDisconnectCause_Value_VPNLocalDisconnect:         "VPN-Local-Disconnect",
 	CiscoDisconnectCause_Value_VPNSessionLimit:            "VPN-Session-Limit",
 	CiscoDisconnectCause_Value_VPNCallRedirect:            "VPN-Call-Redirect",
+}
+
+func CiscoDisconnectCause_GetValueString(value uint32) (str string, err error) {
+	str, ok := CiscoDisconnectCause_Strings[CiscoDisconnectCause(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in CiscoDisconnectCause mapping", value)
+	}
+	return
+}
+
+func CiscoDisconnectCause_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range CiscoDisconnectCause_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in CiscoDisconnectCause mapping", value)
+	return
 }
 
 func (a CiscoDisconnectCause) String() string {

@@ -3,16 +3,543 @@
 package ascend
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 
 	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
+	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
 )
 
 const (
 	_Ascend_VendorID = 529
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	2:   {"Ascend-Max-Shared-Users", 5, nil},
+	7:   {"Ascend-UU-Info", 1, nil},
+	9:   {"Ascend-CIR-Timer", 5, nil},
+	10:  {"Ascend-FR-08-Mode", 5, nil},
+	11:  {"Ascend-Destination-Nas-Port", 5, nil},
+	12:  {"Ascend-FR-SVC-Addr", 1, nil},
+	13:  {"Ascend-NAS-Port-Format", 5, AscendNASPortFormat_GetValueString},
+	14:  {"Ascend-ATM-Fault-Management", 5, AscendATMFaultManagement_GetValueString},
+	15:  {"Ascend-ATM-Loopback-Cell-Loss", 5, nil},
+	16:  {"Ascend-Ckt-Type", 5, AscendCktType_GetValueString},
+	17:  {"Ascend-SVC-Enabled", 5, AscendSVCEnabled_GetValueString},
+	18:  {"Ascend-Session-Type", 5, AscendSessionType_GetValueString},
+	19:  {"Ascend-H323-Gatekeeper", 3, nil},
+	20:  {"Ascend-Global-Call-Id", 1, nil},
+	21:  {"Ascend-H323-Conference-Id", 5, nil},
+	22:  {"Ascend-H323-Fegw-Address", 3, nil},
+	23:  {"Ascend-H323-Dialed-Time", 5, nil},
+	24:  {"Ascend-Dialed-Number", 1, nil},
+	25:  {"Ascend-Inter-Arrival-Jitter", 5, nil},
+	26:  {"Ascend-Dropped-Octets", 5, nil},
+	27:  {"Ascend-Dropped-Packets", 5, nil},
+	28:  {"Ascend-Auth-Delay", 5, nil},
+	29:  {"Ascend-X25-Pad-X3-Profile", 5, AscendX25PadX3Profile_GetValueString},
+	30:  {"Ascend-X25-Pad-X3-Parameters", 1, nil},
+	31:  {"Ascend-Tunnel-VRouter-Name", 1, nil},
+	32:  {"Ascend-X25-Reverse-Charging", 5, AscendX25ReverseCharging_GetValueString},
+	33:  {"Ascend-X25-Nui-Prompt", 1, nil},
+	34:  {"Ascend-X25-Nui-Password-Prompt", 1, nil},
+	35:  {"Ascend-X25-Cug", 1, nil},
+	36:  {"Ascend-X25-Pad-Alias-1", 1, nil},
+	37:  {"Ascend-X25-Pad-Alias-2", 1, nil},
+	38:  {"Ascend-X25-Pad-Alias-3", 1, nil},
+	39:  {"Ascend-X25-X121-Address", 1, nil},
+	40:  {"Ascend-X25-Nui", 1, nil},
+	41:  {"Ascend-X25-Rpoa", 1, nil},
+	42:  {"Ascend-X25-Pad-Prompt", 1, nil},
+	43:  {"Ascend-X25-Pad-Banner", 1, nil},
+	44:  {"Ascend-X25-Profile-Name", 1, nil},
+	45:  {"Ascend-Recv-Name", 1, nil},
+	46:  {"Ascend-Bi-Directional-Auth", 5, AscendBiDirectionalAuth_GetValueString},
+	47:  {"Ascend-MTU", 5, nil},
+	48:  {"Ascend-Call-Direction", 5, AscendCallDirection_GetValueString},
+	49:  {"Ascend-Service-Type", 5, AscendServiceType_GetValueString},
+	50:  {"Ascend-Filter-Required", 5, AscendFilterRequired_GetValueString},
+	51:  {"Ascend-Traffic-Shaper", 5, nil},
+	52:  {"Ascend-Access-Intercept-LEA", 1, nil},
+	53:  {"Ascend-Access-Intercept-Log", 1, nil},
+	54:  {"Ascend-Private-Route-Table-ID", 1, nil},
+	55:  {"Ascend-Private-Route-Required", 5, AscendPrivateRouteRequired_GetValueString},
+	56:  {"Ascend-Cache-Refresh", 5, AscendCacheRefresh_GetValueString},
+	57:  {"Ascend-Cache-Time", 5, nil},
+	58:  {"Ascend-Egress-Enabled", 5, nil},
+	59:  {"Ascend-QOS-Upstream", 1, nil},
+	60:  {"Ascend-QOS-Downstream", 1, nil},
+	61:  {"Ascend-ATM-Connect-Vpi", 5, nil},
+	62:  {"Ascend-ATM-Connect-Vci", 5, nil},
+	63:  {"Ascend-ATM-Connect-Group", 5, nil},
+	64:  {"Ascend-ATM-Group", 5, nil},
+	65:  {"Ascend-IPX-Header-Compression", 5, AscendIPXHeaderCompression_GetValueString},
+	66:  {"Ascend-Calling-Id-Type-Of-Num", 5, AscendCallingIDTypeOfNum_GetValueString},
+	67:  {"Ascend-Calling-Id-Number-Plan", 5, AscendCallingIDNumberPlan_GetValueString},
+	68:  {"Ascend-Calling-Id-Presentatn", 5, AscendCallingIDPresentatn_GetValueString},
+	69:  {"Ascend-Calling-Id-Screening", 5, AscendCallingIDScreening_GetValueString},
+	70:  {"Ascend-BIR-Enable", 5, AscendBIREnable_GetValueString},
+	71:  {"Ascend-BIR-Proxy", 5, AscendBIRProxy_GetValueString},
+	72:  {"Ascend-BIR-Bridge-Group", 5, nil},
+	73:  {"Ascend-IPSEC-Profile", 1, nil},
+	74:  {"Ascend-PPPoE-Enable", 5, AscendPPPoEEnable_GetValueString},
+	75:  {"Ascend-Bridge-Non-PPPoE", 5, AscendBridgeNonPPPoE_GetValueString},
+	76:  {"Ascend-ATM-Direct", 5, AscendATMDirect_GetValueString},
+	77:  {"Ascend-ATM-Direct-Profile", 1, nil},
+	78:  {"Ascend-Client-Primary-WINS", 3, nil},
+	79:  {"Ascend-Client-Secondary-WINS", 3, nil},
+	80:  {"Ascend-Client-Assign-WINS", 5, AscendClientAssignWINS_GetValueString},
+	81:  {"Ascend-Auth-Type", 5, AscendAuthType_GetValueString},
+	82:  {"Ascend-Port-Redir-Protocol", 5, AscendPortRedirProtocol_GetValueString},
+	83:  {"Ascend-Port-Redir-Portnum", 5, nil},
+	84:  {"Ascend-Port-Redir-Server", 3, nil},
+	85:  {"Ascend-IP-Pool-Chaining", 5, AscendIPPoolChaining_GetValueString},
+	86:  {"Ascend-Owner-IP-Addr", 3, nil},
+	87:  {"Ascend-IP-TOS", 5, AscendIPTOS_GetValueString},
+	88:  {"Ascend-IP-TOS-Precedence", 5, AscendIPTOSPrecedence_GetValueString},
+	89:  {"Ascend-IP-TOS-Apply-To", 5, AscendIPTOSApplyTo_GetValueString},
+	90:  {"Ascend-Filter", 1, nil},
+	91:  {"Ascend-Telnet-Profile", 1, nil},
+	92:  {"Ascend-Dsl-Rate-Type", 5, AscendDslRateType_GetValueString},
+	93:  {"Ascend-Redirect-Number", 1, nil},
+	94:  {"Ascend-ATM-Vpi", 5, nil},
+	95:  {"Ascend-ATM-Vci", 5, nil},
+	96:  {"Ascend-Source-IP-Check", 5, AscendSourceIPCheck_GetValueString},
+	97:  {"Ascend-Dsl-Rate-Mode", 5, AscendDslRateMode_GetValueString},
+	98:  {"Ascend-Dsl-Upstream-Limit", 5, AscendDslUpstreamLimit_GetValueString},
+	99:  {"Ascend-Dsl-Downstream-Limit", 5, AscendDslDownstreamLimit_GetValueString},
+	100: {"Ascend-Dsl-CIR-Recv-Limit", 5, nil},
+	101: {"Ascend-Dsl-CIR-Xmit-Limit", 5, nil},
+	102: {"Ascend-VRouter-Name", 1, nil},
+	103: {"Ascend-Source-Auth", 1, nil},
+	104: {"Ascend-Private-Route", 1, nil},
+	105: {"Ascend-Numbering-Plan-ID", 5, AscendNumberingPlanID_GetValueString},
+	106: {"Ascend-FR-Link-Status-DLCI", 5, AscendFRLinkStatusDLCI_GetValueString},
+	107: {"Ascend-Calling-Subaddress", 1, nil},
+	108: {"Ascend-Callback-Delay", 5, nil},
+	109: {"Ascend-Endpoint-Disc", 1, nil},
+	110: {"Ascend-Remote-FW", 1, nil},
+	111: {"Ascend-Multicast-GLeave-Delay", 5, nil},
+	112: {"Ascend-CBCP-Enable", 5, AscendCBCPEnable_GetValueString},
+	113: {"Ascend-CBCP-Mode", 5, AscendCBCPMode_GetValueString},
+	114: {"Ascend-CBCP-Delay", 5, nil},
+	115: {"Ascend-CBCP-Trunk-Group", 5, nil},
+	116: {"Ascend-Appletalk-Route", 1, nil},
+	117: {"Ascend-Appletalk-Peer-Mode", 5, AscendAppletalkPeerMode_GetValueString},
+	118: {"Ascend-Route-Appletalk", 5, AscendRouteAppletalk_GetValueString},
+	119: {"Ascend-FCP-Parameter", 1, nil},
+	120: {"Ascend-Modem-PortNo", 5, nil},
+	121: {"Ascend-Modem-SlotNo", 5, nil},
+	122: {"Ascend-Modem-ShelfNo", 5, nil},
+	123: {"Ascend-Call-Attempt-Limit", 5, nil},
+	124: {"Ascend-Call-Block-Duration", 5, nil},
+	125: {"Ascend-Maximum-Call-Duration", 5, nil},
+	126: {"Ascend-Temporary-Rtes", 5, AscendTemporaryRtes_GetValueString},
+	127: {"Ascend-Tunneling-Protocol", 5, AscendTunnelingProtocol_GetValueString},
+	128: {"Ascend-Shared-Profile-Enable", 5, AscendSharedProfileEnable_GetValueString},
+	129: {"Ascend-Primary-Home-Agent", 1, nil},
+	130: {"Ascend-Secondary-Home-Agent", 1, nil},
+	131: {"Ascend-Dialout-Allowed", 5, AscendDialoutAllowed_GetValueString},
+	132: {"Ascend-Client-Gateway", 3, nil},
+	133: {"Ascend-BACP-Enable", 5, AscendBACPEnable_GetValueString},
+	134: {"Ascend-DHCP-Maximum-Leases", 5, nil},
+	135: {"Ascend-Client-Primary-DNS", 3, nil},
+	136: {"Ascend-Client-Secondary-DNS", 3, nil},
+	137: {"Ascend-Client-Assign-DNS", 5, AscendClientAssignDNS_GetValueString},
+	138: {"Ascend-User-Acct-Type", 5, AscendUserAcctType_GetValueString},
+	139: {"Ascend-User-Acct-Host", 3, nil},
+	140: {"Ascend-User-Acct-Port", 5, nil},
+	141: {"Ascend-User-Acct-Key", 1, nil},
+	142: {"Ascend-User-Acct-Base", 5, AscendUserAcctBase_GetValueString},
+	143: {"Ascend-User-Acct-Time", 5, nil},
+	144: {"Ascend-Assign-IP-Client", 3, nil},
+	145: {"Ascend-Assign-IP-Server", 3, nil},
+	146: {"Ascend-Assign-IP-Global-Pool", 1, nil},
+	147: {"Ascend-DHCP-Reply", 5, AscendDHCPReply_GetValueString},
+	148: {"Ascend-DHCP-Pool-Number", 5, nil},
+	149: {"Ascend-Expect-Callback", 5, AscendExpectCallback_GetValueString},
+	150: {"Ascend-Event-Type", 5, AscendEventType_GetValueString},
+	151: {"Ascend-Session-Svr-Key", 1, nil},
+	152: {"Ascend-Multicast-Rate-Limit", 5, nil},
+	153: {"Ascend-IF-Netmask", 3, nil},
+	154: {"Ascend-Remote-Addr", 3, nil},
+	155: {"Ascend-Multicast-Client", 5, AscendMulticastClient_GetValueString},
+	156: {"Ascend-FR-Circuit-Name", 1, nil},
+	157: {"Ascend-FR-LinkUp", 5, AscendFRLinkUp_GetValueString},
+	158: {"Ascend-FR-Nailed-Grp", 5, nil},
+	159: {"Ascend-FR-Type", 5, AscendFRType_GetValueString},
+	160: {"Ascend-FR-Link-Mgt", 5, AscendFRLinkMgt_GetValueString},
+	161: {"Ascend-FR-N391", 5, nil},
+	162: {"Ascend-FR-DCE-N392", 5, nil},
+	163: {"Ascend-FR-DTE-N392", 5, nil},
+	164: {"Ascend-FR-DCE-N393", 5, nil},
+	165: {"Ascend-FR-DTE-N393", 5, nil},
+	166: {"Ascend-FR-T391", 5, nil},
+	167: {"Ascend-FR-T392", 5, nil},
+	168: {"Ascend-Bridge-Address", 1, nil},
+	169: {"Ascend-TS-Idle-Limit", 5, nil},
+	170: {"Ascend-TS-Idle-Mode", 5, AscendTSIdleMode_GetValueString},
+	171: {"Ascend-DBA-Monitor", 5, AscendDBAMonitor_GetValueString},
+	172: {"Ascend-Base-Channel-Count", 5, nil},
+	173: {"Ascend-Minimum-Channels", 5, nil},
+	174: {"Ascend-IPX-Route", 1, nil},
+	175: {"Ascend-FT1-Caller", 5, AscendFT1Caller_GetValueString},
+	176: {"Ascend-Backup", 1, nil},
+	177: {"Ascend-Call-Type", 5, AscendCallType_GetValueString},
+	178: {"Ascend-Group", 1, nil},
+	179: {"Ascend-FR-DLCI", 5, nil},
+	180: {"Ascend-FR-Profile-Name", 1, nil},
+	181: {"Ascend-Ara-PW", 1, nil},
+	182: {"Ascend-IPX-Node-Addr", 1, nil},
+	183: {"Ascend-Home-Agent-IP-Addr", 3, nil},
+	184: {"Ascend-Home-Agent-Password", 1, nil},
+	185: {"Ascend-Home-Network-Name", 1, nil},
+	186: {"Ascend-Home-Agent-UDP-Port", 5, nil},
+	187: {"Ascend-Multilink-ID", 5, nil},
+	188: {"Ascend-Num-In-Multilink", 5, nil},
+	189: {"Ascend-First-Dest", 3, nil},
+	190: {"Ascend-Pre-Input-Octets", 5, nil},
+	191: {"Ascend-Pre-Output-Octets", 5, nil},
+	192: {"Ascend-Pre-Input-Packets", 5, nil},
+	193: {"Ascend-Pre-Output-Packets", 5, nil},
+	194: {"Ascend-Maximum-Time", 5, nil},
+	195: {"Ascend-Disconnect-Cause", 5, AscendDisconnectCause_GetValueString},
+	196: {"Ascend-Connect-Progress", 5, AscendConnectProgress_GetValueString},
+	197: {"Ascend-Data-Rate", 5, nil},
+	198: {"Ascend-PreSession-Time", 5, nil},
+	199: {"Ascend-Token-Idle", 5, nil},
+	200: {"Ascend-Token-Immediate", 5, AscendTokenImmediate_GetValueString},
+	201: {"Ascend-Require-Auth", 5, AscendRequireAuth_GetValueString},
+	202: {"Ascend-Number-Sessions", 1, nil},
+	203: {"Ascend-Authen-Alias", 1, nil},
+	204: {"Ascend-Token-Expiry", 5, nil},
+	205: {"Ascend-Menu-Selector", 1, nil},
+	206: {"Ascend-Menu-Item", 1, nil},
+	207: {"Ascend-PW-Warntime", 5, AscendPWWarntime_GetValueString},
+	208: {"Ascend-PW-Lifetime", 5, AscendPWLifetime_GetValueString},
+	209: {"Ascend-IP-Direct", 3, nil},
+	210: {"Ascend-PPP-VJ-Slot-Comp", 5, AscendPPPVJSlotComp_GetValueString},
+	211: {"Ascend-PPP-VJ-1172", 5, AscendPPPVJ1172_GetValueString},
+	212: {"Ascend-PPP-Async-Map", 5, nil},
+	213: {"Ascend-Third-Prompt", 1, nil},
+	214: {"Ascend-Send-Secret", 1, nil},
+	215: {"Ascend-Receive-Secret", 1, nil},
+	216: {"Ascend-IPX-Peer-Mode", 5, AscendIPXPeerMode_GetValueString},
+	217: {"Ascend-IP-Pool-Definition", 1, nil},
+	218: {"Ascend-Assign-IP-Pool", 5, nil},
+	219: {"Ascend-FR-Direct", 5, AscendFRDirect_GetValueString},
+	220: {"Ascend-FR-Direct-Profile", 1, nil},
+	221: {"Ascend-FR-Direct-DLCI", 5, nil},
+	222: {"Ascend-Handle-IPX", 5, AscendHandleIPX_GetValueString},
+	223: {"Ascend-Netware-timeout", 5, nil},
+	224: {"Ascend-IPX-Alias", 5, nil},
+	225: {"Ascend-Metric", 5, nil},
+	226: {"Ascend-PRI-Number-Type", 5, AscendPRINumberType_GetValueString},
+	227: {"Ascend-Dial-Number", 1, nil},
+	228: {"Ascend-Route-IP", 5, AscendRouteIP_GetValueString},
+	229: {"Ascend-Route-IPX", 5, AscendRouteIPX_GetValueString},
+	230: {"Ascend-Bridge", 5, AscendBridge_GetValueString},
+	231: {"Ascend-Send-Auth", 5, AscendSendAuth_GetValueString},
+	232: {"Ascend-Send-Passwd", 1, nil},
+	233: {"Ascend-Link-Compression", 5, AscendLinkCompression_GetValueString},
+	234: {"Ascend-Target-Util", 5, nil},
+	235: {"Ascend-Maximum-Channels", 5, nil},
+	236: {"Ascend-Inc-Channel-Count", 5, nil},
+	237: {"Ascend-Dec-Channel-Count", 5, nil},
+	238: {"Ascend-Seconds-Of-History", 5, nil},
+	239: {"Ascend-History-Weigh-Type", 5, AscendHistoryWeighType_GetValueString},
+	240: {"Ascend-Add-Seconds", 5, nil},
+	241: {"Ascend-Remove-Seconds", 5, nil},
+	242: {"Ascend-Data-Filter", 12, nil},
+	243: {"Ascend-Call-Filter", 12, nil},
+	244: {"Ascend-Idle-Limit", 5, nil},
+	245: {"Ascend-Preempt-Limit", 5, nil},
+	246: {"Ascend-Callback", 5, AscendCallback_GetValueString},
+	247: {"Ascend-Data-Svc", 5, AscendDataSvc_GetValueString},
+	248: {"Ascend-Force-56", 5, AscendForce56_GetValueString},
+	249: {"Ascend-Billing-Number", 1, nil},
+	250: {"Ascend-Call-By-Call", 5, nil},
+	251: {"Ascend-Transit-Number", 1, nil},
+	252: {"Ascend-Host-Info", 1, nil},
+	253: {"Ascend-PPP-Address", 3, nil},
+	254: {"Ascend-MPP-Idle-Percent", 5, nil},
+	255: {"Ascend-Xmit-Rate", 5, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"Ascend-Max-Shared-Users":        {2, 5, nil},
+	"Ascend-UU-Info":                 {7, 1, nil},
+	"Ascend-CIR-Timer":               {9, 5, nil},
+	"Ascend-FR-08-Mode":              {10, 5, nil},
+	"Ascend-Destination-Nas-Port":    {11, 5, nil},
+	"Ascend-FR-SVC-Addr":             {12, 1, nil},
+	"Ascend-NAS-Port-Format":         {13, 5, AscendNASPortFormat_GetValueNumber},
+	"Ascend-ATM-Fault-Management":    {14, 5, AscendATMFaultManagement_GetValueNumber},
+	"Ascend-ATM-Loopback-Cell-Loss":  {15, 5, nil},
+	"Ascend-Ckt-Type":                {16, 5, AscendCktType_GetValueNumber},
+	"Ascend-SVC-Enabled":             {17, 5, AscendSVCEnabled_GetValueNumber},
+	"Ascend-Session-Type":            {18, 5, AscendSessionType_GetValueNumber},
+	"Ascend-H323-Gatekeeper":         {19, 3, nil},
+	"Ascend-Global-Call-Id":          {20, 1, nil},
+	"Ascend-H323-Conference-Id":      {21, 5, nil},
+	"Ascend-H323-Fegw-Address":       {22, 3, nil},
+	"Ascend-H323-Dialed-Time":        {23, 5, nil},
+	"Ascend-Dialed-Number":           {24, 1, nil},
+	"Ascend-Inter-Arrival-Jitter":    {25, 5, nil},
+	"Ascend-Dropped-Octets":          {26, 5, nil},
+	"Ascend-Dropped-Packets":         {27, 5, nil},
+	"Ascend-Auth-Delay":              {28, 5, nil},
+	"Ascend-X25-Pad-X3-Profile":      {29, 5, AscendX25PadX3Profile_GetValueNumber},
+	"Ascend-X25-Pad-X3-Parameters":   {30, 1, nil},
+	"Ascend-Tunnel-VRouter-Name":     {31, 1, nil},
+	"Ascend-X25-Reverse-Charging":    {32, 5, AscendX25ReverseCharging_GetValueNumber},
+	"Ascend-X25-Nui-Prompt":          {33, 1, nil},
+	"Ascend-X25-Nui-Password-Prompt": {34, 1, nil},
+	"Ascend-X25-Cug":                 {35, 1, nil},
+	"Ascend-X25-Pad-Alias-1":         {36, 1, nil},
+	"Ascend-X25-Pad-Alias-2":         {37, 1, nil},
+	"Ascend-X25-Pad-Alias-3":         {38, 1, nil},
+	"Ascend-X25-X121-Address":        {39, 1, nil},
+	"Ascend-X25-Nui":                 {40, 1, nil},
+	"Ascend-X25-Rpoa":                {41, 1, nil},
+	"Ascend-X25-Pad-Prompt":          {42, 1, nil},
+	"Ascend-X25-Pad-Banner":          {43, 1, nil},
+	"Ascend-X25-Profile-Name":        {44, 1, nil},
+	"Ascend-Recv-Name":               {45, 1, nil},
+	"Ascend-Bi-Directional-Auth":     {46, 5, AscendBiDirectionalAuth_GetValueNumber},
+	"Ascend-MTU":                     {47, 5, nil},
+	"Ascend-Call-Direction":          {48, 5, AscendCallDirection_GetValueNumber},
+	"Ascend-Service-Type":            {49, 5, AscendServiceType_GetValueNumber},
+	"Ascend-Filter-Required":         {50, 5, AscendFilterRequired_GetValueNumber},
+	"Ascend-Traffic-Shaper":          {51, 5, nil},
+	"Ascend-Access-Intercept-LEA":    {52, 1, nil},
+	"Ascend-Access-Intercept-Log":    {53, 1, nil},
+	"Ascend-Private-Route-Table-ID":  {54, 1, nil},
+	"Ascend-Private-Route-Required":  {55, 5, AscendPrivateRouteRequired_GetValueNumber},
+	"Ascend-Cache-Refresh":           {56, 5, AscendCacheRefresh_GetValueNumber},
+	"Ascend-Cache-Time":              {57, 5, nil},
+	"Ascend-Egress-Enabled":          {58, 5, nil},
+	"Ascend-QOS-Upstream":            {59, 1, nil},
+	"Ascend-QOS-Downstream":          {60, 1, nil},
+	"Ascend-ATM-Connect-Vpi":         {61, 5, nil},
+	"Ascend-ATM-Connect-Vci":         {62, 5, nil},
+	"Ascend-ATM-Connect-Group":       {63, 5, nil},
+	"Ascend-ATM-Group":               {64, 5, nil},
+	"Ascend-IPX-Header-Compression":  {65, 5, AscendIPXHeaderCompression_GetValueNumber},
+	"Ascend-Calling-Id-Type-Of-Num":  {66, 5, AscendCallingIDTypeOfNum_GetValueNumber},
+	"Ascend-Calling-Id-Number-Plan":  {67, 5, AscendCallingIDNumberPlan_GetValueNumber},
+	"Ascend-Calling-Id-Presentatn":   {68, 5, AscendCallingIDPresentatn_GetValueNumber},
+	"Ascend-Calling-Id-Screening":    {69, 5, AscendCallingIDScreening_GetValueNumber},
+	"Ascend-BIR-Enable":              {70, 5, AscendBIREnable_GetValueNumber},
+	"Ascend-BIR-Proxy":               {71, 5, AscendBIRProxy_GetValueNumber},
+	"Ascend-BIR-Bridge-Group":        {72, 5, nil},
+	"Ascend-IPSEC-Profile":           {73, 1, nil},
+	"Ascend-PPPoE-Enable":            {74, 5, AscendPPPoEEnable_GetValueNumber},
+	"Ascend-Bridge-Non-PPPoE":        {75, 5, AscendBridgeNonPPPoE_GetValueNumber},
+	"Ascend-ATM-Direct":              {76, 5, AscendATMDirect_GetValueNumber},
+	"Ascend-ATM-Direct-Profile":      {77, 1, nil},
+	"Ascend-Client-Primary-WINS":     {78, 3, nil},
+	"Ascend-Client-Secondary-WINS":   {79, 3, nil},
+	"Ascend-Client-Assign-WINS":      {80, 5, AscendClientAssignWINS_GetValueNumber},
+	"Ascend-Auth-Type":               {81, 5, AscendAuthType_GetValueNumber},
+	"Ascend-Port-Redir-Protocol":     {82, 5, AscendPortRedirProtocol_GetValueNumber},
+	"Ascend-Port-Redir-Portnum":      {83, 5, nil},
+	"Ascend-Port-Redir-Server":       {84, 3, nil},
+	"Ascend-IP-Pool-Chaining":        {85, 5, AscendIPPoolChaining_GetValueNumber},
+	"Ascend-Owner-IP-Addr":           {86, 3, nil},
+	"Ascend-IP-TOS":                  {87, 5, AscendIPTOS_GetValueNumber},
+	"Ascend-IP-TOS-Precedence":       {88, 5, AscendIPTOSPrecedence_GetValueNumber},
+	"Ascend-IP-TOS-Apply-To":         {89, 5, AscendIPTOSApplyTo_GetValueNumber},
+	"Ascend-Filter":                  {90, 1, nil},
+	"Ascend-Telnet-Profile":          {91, 1, nil},
+	"Ascend-Dsl-Rate-Type":           {92, 5, AscendDslRateType_GetValueNumber},
+	"Ascend-Redirect-Number":         {93, 1, nil},
+	"Ascend-ATM-Vpi":                 {94, 5, nil},
+	"Ascend-ATM-Vci":                 {95, 5, nil},
+	"Ascend-Source-IP-Check":         {96, 5, AscendSourceIPCheck_GetValueNumber},
+	"Ascend-Dsl-Rate-Mode":           {97, 5, AscendDslRateMode_GetValueNumber},
+	"Ascend-Dsl-Upstream-Limit":      {98, 5, AscendDslUpstreamLimit_GetValueNumber},
+	"Ascend-Dsl-Downstream-Limit":    {99, 5, AscendDslDownstreamLimit_GetValueNumber},
+	"Ascend-Dsl-CIR-Recv-Limit":      {100, 5, nil},
+	"Ascend-Dsl-CIR-Xmit-Limit":      {101, 5, nil},
+	"Ascend-VRouter-Name":            {102, 1, nil},
+	"Ascend-Source-Auth":             {103, 1, nil},
+	"Ascend-Private-Route":           {104, 1, nil},
+	"Ascend-Numbering-Plan-ID":       {105, 5, AscendNumberingPlanID_GetValueNumber},
+	"Ascend-FR-Link-Status-DLCI":     {106, 5, AscendFRLinkStatusDLCI_GetValueNumber},
+	"Ascend-Calling-Subaddress":      {107, 1, nil},
+	"Ascend-Callback-Delay":          {108, 5, nil},
+	"Ascend-Endpoint-Disc":           {109, 1, nil},
+	"Ascend-Remote-FW":               {110, 1, nil},
+	"Ascend-Multicast-GLeave-Delay":  {111, 5, nil},
+	"Ascend-CBCP-Enable":             {112, 5, AscendCBCPEnable_GetValueNumber},
+	"Ascend-CBCP-Mode":               {113, 5, AscendCBCPMode_GetValueNumber},
+	"Ascend-CBCP-Delay":              {114, 5, nil},
+	"Ascend-CBCP-Trunk-Group":        {115, 5, nil},
+	"Ascend-Appletalk-Route":         {116, 1, nil},
+	"Ascend-Appletalk-Peer-Mode":     {117, 5, AscendAppletalkPeerMode_GetValueNumber},
+	"Ascend-Route-Appletalk":         {118, 5, AscendRouteAppletalk_GetValueNumber},
+	"Ascend-FCP-Parameter":           {119, 1, nil},
+	"Ascend-Modem-PortNo":            {120, 5, nil},
+	"Ascend-Modem-SlotNo":            {121, 5, nil},
+	"Ascend-Modem-ShelfNo":           {122, 5, nil},
+	"Ascend-Call-Attempt-Limit":      {123, 5, nil},
+	"Ascend-Call-Block-Duration":     {124, 5, nil},
+	"Ascend-Maximum-Call-Duration":   {125, 5, nil},
+	"Ascend-Temporary-Rtes":          {126, 5, AscendTemporaryRtes_GetValueNumber},
+	"Ascend-Tunneling-Protocol":      {127, 5, AscendTunnelingProtocol_GetValueNumber},
+	"Ascend-Shared-Profile-Enable":   {128, 5, AscendSharedProfileEnable_GetValueNumber},
+	"Ascend-Primary-Home-Agent":      {129, 1, nil},
+	"Ascend-Secondary-Home-Agent":    {130, 1, nil},
+	"Ascend-Dialout-Allowed":         {131, 5, AscendDialoutAllowed_GetValueNumber},
+	"Ascend-Client-Gateway":          {132, 3, nil},
+	"Ascend-BACP-Enable":             {133, 5, AscendBACPEnable_GetValueNumber},
+	"Ascend-DHCP-Maximum-Leases":     {134, 5, nil},
+	"Ascend-Client-Primary-DNS":      {135, 3, nil},
+	"Ascend-Client-Secondary-DNS":    {136, 3, nil},
+	"Ascend-Client-Assign-DNS":       {137, 5, AscendClientAssignDNS_GetValueNumber},
+	"Ascend-User-Acct-Type":          {138, 5, AscendUserAcctType_GetValueNumber},
+	"Ascend-User-Acct-Host":          {139, 3, nil},
+	"Ascend-User-Acct-Port":          {140, 5, nil},
+	"Ascend-User-Acct-Key":           {141, 1, nil},
+	"Ascend-User-Acct-Base":          {142, 5, AscendUserAcctBase_GetValueNumber},
+	"Ascend-User-Acct-Time":          {143, 5, nil},
+	"Ascend-Assign-IP-Client":        {144, 3, nil},
+	"Ascend-Assign-IP-Server":        {145, 3, nil},
+	"Ascend-Assign-IP-Global-Pool":   {146, 1, nil},
+	"Ascend-DHCP-Reply":              {147, 5, AscendDHCPReply_GetValueNumber},
+	"Ascend-DHCP-Pool-Number":        {148, 5, nil},
+	"Ascend-Expect-Callback":         {149, 5, AscendExpectCallback_GetValueNumber},
+	"Ascend-Event-Type":              {150, 5, AscendEventType_GetValueNumber},
+	"Ascend-Session-Svr-Key":         {151, 1, nil},
+	"Ascend-Multicast-Rate-Limit":    {152, 5, nil},
+	"Ascend-IF-Netmask":              {153, 3, nil},
+	"Ascend-Remote-Addr":             {154, 3, nil},
+	"Ascend-Multicast-Client":        {155, 5, AscendMulticastClient_GetValueNumber},
+	"Ascend-FR-Circuit-Name":         {156, 1, nil},
+	"Ascend-FR-LinkUp":               {157, 5, AscendFRLinkUp_GetValueNumber},
+	"Ascend-FR-Nailed-Grp":           {158, 5, nil},
+	"Ascend-FR-Type":                 {159, 5, AscendFRType_GetValueNumber},
+	"Ascend-FR-Link-Mgt":             {160, 5, AscendFRLinkMgt_GetValueNumber},
+	"Ascend-FR-N391":                 {161, 5, nil},
+	"Ascend-FR-DCE-N392":             {162, 5, nil},
+	"Ascend-FR-DTE-N392":             {163, 5, nil},
+	"Ascend-FR-DCE-N393":             {164, 5, nil},
+	"Ascend-FR-DTE-N393":             {165, 5, nil},
+	"Ascend-FR-T391":                 {166, 5, nil},
+	"Ascend-FR-T392":                 {167, 5, nil},
+	"Ascend-Bridge-Address":          {168, 1, nil},
+	"Ascend-TS-Idle-Limit":           {169, 5, nil},
+	"Ascend-TS-Idle-Mode":            {170, 5, AscendTSIdleMode_GetValueNumber},
+	"Ascend-DBA-Monitor":             {171, 5, AscendDBAMonitor_GetValueNumber},
+	"Ascend-Base-Channel-Count":      {172, 5, nil},
+	"Ascend-Minimum-Channels":        {173, 5, nil},
+	"Ascend-IPX-Route":               {174, 1, nil},
+	"Ascend-FT1-Caller":              {175, 5, AscendFT1Caller_GetValueNumber},
+	"Ascend-Backup":                  {176, 1, nil},
+	"Ascend-Call-Type":               {177, 5, AscendCallType_GetValueNumber},
+	"Ascend-Group":                   {178, 1, nil},
+	"Ascend-FR-DLCI":                 {179, 5, nil},
+	"Ascend-FR-Profile-Name":         {180, 1, nil},
+	"Ascend-Ara-PW":                  {181, 1, nil},
+	"Ascend-IPX-Node-Addr":           {182, 1, nil},
+	"Ascend-Home-Agent-IP-Addr":      {183, 3, nil},
+	"Ascend-Home-Agent-Password":     {184, 1, nil},
+	"Ascend-Home-Network-Name":       {185, 1, nil},
+	"Ascend-Home-Agent-UDP-Port":     {186, 5, nil},
+	"Ascend-Multilink-ID":            {187, 5, nil},
+	"Ascend-Num-In-Multilink":        {188, 5, nil},
+	"Ascend-First-Dest":              {189, 3, nil},
+	"Ascend-Pre-Input-Octets":        {190, 5, nil},
+	"Ascend-Pre-Output-Octets":       {191, 5, nil},
+	"Ascend-Pre-Input-Packets":       {192, 5, nil},
+	"Ascend-Pre-Output-Packets":      {193, 5, nil},
+	"Ascend-Maximum-Time":            {194, 5, nil},
+	"Ascend-Disconnect-Cause":        {195, 5, AscendDisconnectCause_GetValueNumber},
+	"Ascend-Connect-Progress":        {196, 5, AscendConnectProgress_GetValueNumber},
+	"Ascend-Data-Rate":               {197, 5, nil},
+	"Ascend-PreSession-Time":         {198, 5, nil},
+	"Ascend-Token-Idle":              {199, 5, nil},
+	"Ascend-Token-Immediate":         {200, 5, AscendTokenImmediate_GetValueNumber},
+	"Ascend-Require-Auth":            {201, 5, AscendRequireAuth_GetValueNumber},
+	"Ascend-Number-Sessions":         {202, 1, nil},
+	"Ascend-Authen-Alias":            {203, 1, nil},
+	"Ascend-Token-Expiry":            {204, 5, nil},
+	"Ascend-Menu-Selector":           {205, 1, nil},
+	"Ascend-Menu-Item":               {206, 1, nil},
+	"Ascend-PW-Warntime":             {207, 5, AscendPWWarntime_GetValueNumber},
+	"Ascend-PW-Lifetime":             {208, 5, AscendPWLifetime_GetValueNumber},
+	"Ascend-IP-Direct":               {209, 3, nil},
+	"Ascend-PPP-VJ-Slot-Comp":        {210, 5, AscendPPPVJSlotComp_GetValueNumber},
+	"Ascend-PPP-VJ-1172":             {211, 5, AscendPPPVJ1172_GetValueNumber},
+	"Ascend-PPP-Async-Map":           {212, 5, nil},
+	"Ascend-Third-Prompt":            {213, 1, nil},
+	"Ascend-Send-Secret":             {214, 1, nil},
+	"Ascend-Receive-Secret":          {215, 1, nil},
+	"Ascend-IPX-Peer-Mode":           {216, 5, AscendIPXPeerMode_GetValueNumber},
+	"Ascend-IP-Pool-Definition":      {217, 1, nil},
+	"Ascend-Assign-IP-Pool":          {218, 5, nil},
+	"Ascend-FR-Direct":               {219, 5, AscendFRDirect_GetValueNumber},
+	"Ascend-FR-Direct-Profile":       {220, 1, nil},
+	"Ascend-FR-Direct-DLCI":          {221, 5, nil},
+	"Ascend-Handle-IPX":              {222, 5, AscendHandleIPX_GetValueNumber},
+	"Ascend-Netware-timeout":         {223, 5, nil},
+	"Ascend-IPX-Alias":               {224, 5, nil},
+	"Ascend-Metric":                  {225, 5, nil},
+	"Ascend-PRI-Number-Type":         {226, 5, AscendPRINumberType_GetValueNumber},
+	"Ascend-Dial-Number":             {227, 1, nil},
+	"Ascend-Route-IP":                {228, 5, AscendRouteIP_GetValueNumber},
+	"Ascend-Route-IPX":               {229, 5, AscendRouteIPX_GetValueNumber},
+	"Ascend-Bridge":                  {230, 5, AscendBridge_GetValueNumber},
+	"Ascend-Send-Auth":               {231, 5, AscendSendAuth_GetValueNumber},
+	"Ascend-Send-Passwd":             {232, 1, nil},
+	"Ascend-Link-Compression":        {233, 5, AscendLinkCompression_GetValueNumber},
+	"Ascend-Target-Util":             {234, 5, nil},
+	"Ascend-Maximum-Channels":        {235, 5, nil},
+	"Ascend-Inc-Channel-Count":       {236, 5, nil},
+	"Ascend-Dec-Channel-Count":       {237, 5, nil},
+	"Ascend-Seconds-Of-History":      {238, 5, nil},
+	"Ascend-History-Weigh-Type":      {239, 5, AscendHistoryWeighType_GetValueNumber},
+	"Ascend-Add-Seconds":             {240, 5, nil},
+	"Ascend-Remove-Seconds":          {241, 5, nil},
+	"Ascend-Data-Filter":             {242, 12, nil},
+	"Ascend-Call-Filter":             {243, 12, nil},
+	"Ascend-Idle-Limit":              {244, 5, nil},
+	"Ascend-Preempt-Limit":           {245, 5, nil},
+	"Ascend-Callback":                {246, 5, AscendCallback_GetValueNumber},
+	"Ascend-Data-Svc":                {247, 5, AscendDataSvc_GetValueNumber},
+	"Ascend-Force-56":                {248, 5, AscendForce56_GetValueNumber},
+	"Ascend-Billing-Number":          {249, 1, nil},
+	"Ascend-Call-By-Call":            {250, 5, nil},
+	"Ascend-Transit-Number":          {251, 1, nil},
+	"Ascend-Host-Info":               {252, 1, nil},
+	"Ascend-PPP-Address":             {253, 3, nil},
+	"Ascend-MPP-Idle-Percent":        {254, 5, nil},
+	"Ascend-Xmit-Rate":               {255, 5, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_Ascend_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _Ascend_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute
@@ -558,6 +1085,24 @@ var AscendNASPortFormat_Strings = map[AscendNASPortFormat]string{
 	AscendNASPortFormat_Value_One22:   "1_2_2",
 }
 
+func AscendNASPortFormat_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendNASPortFormat_Strings[AscendNASPortFormat(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendNASPortFormat mapping", value)
+	}
+	return
+}
+
+func AscendNASPortFormat_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendNASPortFormat_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendNASPortFormat mapping", value)
+	return
+}
+
 func (a AscendNASPortFormat) String() string {
 	if str, ok := AscendNASPortFormat_Strings[a]; ok {
 		return str
@@ -623,6 +1168,24 @@ var AscendATMFaultManagement_Strings = map[AscendATMFaultManagement]string{
 	AscendATMFaultManagement_Value_VCNoLoopback:       "VC-No-Loopback",
 	AscendATMFaultManagement_Value_VCSegmentLoopback:  "VC-Segment-Loopback",
 	AscendATMFaultManagement_Value_VCEndToEndLoopback: "VC-End-To-End-Loopback",
+}
+
+func AscendATMFaultManagement_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendATMFaultManagement_Strings[AscendATMFaultManagement(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendATMFaultManagement mapping", value)
+	}
+	return
+}
+
+func AscendATMFaultManagement_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendATMFaultManagement_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendATMFaultManagement mapping", value)
+	return
 }
 
 func (a AscendATMFaultManagement) String() string {
@@ -747,6 +1310,24 @@ var AscendCktType_Strings = map[AscendCktType]string{
 	AscendCktType_Value_AscendSVC: "Ascend-SVC",
 }
 
+func AscendCktType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCktType_Strings[AscendCktType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCktType mapping", value)
+	}
+	return
+}
+
+func AscendCktType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCktType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCktType mapping", value)
+	return
+}
+
 func (a AscendCktType) String() string {
 	if str, ok := AscendCktType_Strings[a]; ok {
 		return str
@@ -810,6 +1391,24 @@ const (
 var AscendSVCEnabled_Strings = map[AscendSVCEnabled]string{
 	AscendSVCEnabled_Value_AscendSVCEnabledNo:  "Ascend-SVC-Enabled-No",
 	AscendSVCEnabled_Value_AscendSVCEnabledYes: "Ascend-SVC-Enabled-Yes",
+}
+
+func AscendSVCEnabled_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendSVCEnabled_Strings[AscendSVCEnabled(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendSVCEnabled mapping", value)
+	}
+	return
+}
+
+func AscendSVCEnabled_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendSVCEnabled_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendSVCEnabled mapping", value)
+	return
 }
 
 func (a AscendSVCEnabled) String() string {
@@ -889,6 +1488,24 @@ var AscendSessionType_Strings = map[AscendSessionType]string{
 	AscendSessionType_Value_AscendSessionG72364KPS: "Ascend-Session-G723-64KPS",
 	AscendSessionType_Value_AscendSessionG728:      "Ascend-Session-G728",
 	AscendSessionType_Value_AscendSessionRT24:      "Ascend-Session-RT24",
+}
+
+func AscendSessionType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendSessionType_Strings[AscendSessionType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendSessionType mapping", value)
+	}
+	return
+}
+
+func AscendSessionType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendSessionType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendSessionType mapping", value)
+	return
 }
 
 func (a AscendSessionType) String() string {
@@ -1604,6 +2221,24 @@ var AscendX25PadX3Profile_Strings = map[AscendX25PadX3Profile]string{
 	AscendX25PadX3Profile_Value_CUSTOM:   "CUSTOM",
 }
 
+func AscendX25PadX3Profile_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendX25PadX3Profile_Strings[AscendX25PadX3Profile(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendX25PadX3Profile mapping", value)
+	}
+	return
+}
+
+func AscendX25PadX3Profile_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendX25PadX3Profile_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendX25PadX3Profile mapping", value)
+	return
+}
+
 func (a AscendX25PadX3Profile) String() string {
 	if str, ok := AscendX25PadX3Profile_Strings[a]; ok {
 		return str
@@ -1855,6 +2490,24 @@ const (
 var AscendX25ReverseCharging_Strings = map[AscendX25ReverseCharging]string{
 	AscendX25ReverseCharging_Value_ReverseChargingNo:  "Reverse-Charging-No",
 	AscendX25ReverseCharging_Value_ReverseChargingYes: "Reverse-Charging-Yes",
+}
+
+func AscendX25ReverseCharging_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendX25ReverseCharging_Strings[AscendX25ReverseCharging(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendX25ReverseCharging mapping", value)
+	}
+	return
+}
+
+func AscendX25ReverseCharging_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendX25ReverseCharging_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendX25ReverseCharging mapping", value)
+	return
 }
 
 func (a AscendX25ReverseCharging) String() string {
@@ -3146,6 +3799,24 @@ var AscendBiDirectionalAuth_Strings = map[AscendBiDirectionalAuth]string{
 	AscendBiDirectionalAuth_Value_BiDirectionalAuthRequired: "Bi-Directional-Auth-Required",
 }
 
+func AscendBiDirectionalAuth_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBiDirectionalAuth_Strings[AscendBiDirectionalAuth(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBiDirectionalAuth mapping", value)
+	}
+	return
+}
+
+func AscendBiDirectionalAuth_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBiDirectionalAuth_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBiDirectionalAuth mapping", value)
+	return
+}
+
 func (a AscendBiDirectionalAuth) String() string {
 	if str, ok := AscendBiDirectionalAuth_Strings[a]; ok {
 		return str
@@ -3268,6 +3939,24 @@ var AscendCallDirection_Strings = map[AscendCallDirection]string{
 	AscendCallDirection_Value_AscendCallDirectionOutgoing: "Ascend-Call-Direction-Outgoing",
 }
 
+func AscendCallDirection_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallDirection_Strings[AscendCallDirection(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallDirection mapping", value)
+	}
+	return
+}
+
+func AscendCallDirection_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallDirection_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallDirection mapping", value)
+	return
+}
+
 func (a AscendCallDirection) String() string {
 	if str, ok := AscendCallDirection_Strings[a]; ok {
 		return str
@@ -3379,6 +4068,24 @@ var AscendServiceType_Strings = map[AscendServiceType]string{
 	AscendServiceType_Value_AscendServiceTypeNetToNet:    "Ascend-Service-Type-NetToNet",
 }
 
+func AscendServiceType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendServiceType_Strings[AscendServiceType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendServiceType mapping", value)
+	}
+	return
+}
+
+func AscendServiceType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendServiceType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendServiceType mapping", value)
+	return
+}
+
 func (a AscendServiceType) String() string {
 	if str, ok := AscendServiceType_Strings[a]; ok {
 		return str
@@ -3442,6 +4149,24 @@ const (
 var AscendFilterRequired_Strings = map[AscendFilterRequired]string{
 	AscendFilterRequired_Value_RequiredNo:  "Required-No",
 	AscendFilterRequired_Value_RequiredYes: "Required-Yes",
+}
+
+func AscendFilterRequired_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFilterRequired_Strings[AscendFilterRequired(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFilterRequired mapping", value)
+	}
+	return
+}
+
+func AscendFilterRequired_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFilterRequired_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFilterRequired mapping", value)
+	return
 }
 
 func (a AscendFilterRequired) String() string {
@@ -3848,6 +4573,24 @@ var AscendPrivateRouteRequired_Strings = map[AscendPrivateRouteRequired]string{
 	AscendPrivateRouteRequired_Value_RequiredYes: "Required-Yes",
 }
 
+func AscendPrivateRouteRequired_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPrivateRouteRequired_Strings[AscendPrivateRouteRequired(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPrivateRouteRequired mapping", value)
+	}
+	return
+}
+
+func AscendPrivateRouteRequired_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPrivateRouteRequired_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPrivateRouteRequired mapping", value)
+	return
+}
+
 func (a AscendPrivateRouteRequired) String() string {
 	if str, ok := AscendPrivateRouteRequired_Strings[a]; ok {
 		return str
@@ -3911,6 +4654,24 @@ const (
 var AscendCacheRefresh_Strings = map[AscendCacheRefresh]string{
 	AscendCacheRefresh_Value_RefreshNo:  "Refresh-No",
 	AscendCacheRefresh_Value_RefreshYes: "Refresh-Yes",
+}
+
+func AscendCacheRefresh_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCacheRefresh_Strings[AscendCacheRefresh(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCacheRefresh mapping", value)
+	}
+	return
+}
+
+func AscendCacheRefresh_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCacheRefresh_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCacheRefresh mapping", value)
+	return
 }
 
 func (a AscendCacheRefresh) String() string {
@@ -4508,6 +5269,24 @@ var AscendIPXHeaderCompression_Strings = map[AscendIPXHeaderCompression]string{
 	AscendIPXHeaderCompression_Value_IPXHeaderCompressionYes: "IPX-Header-Compression-Yes",
 }
 
+func AscendIPXHeaderCompression_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPXHeaderCompression_Strings[AscendIPXHeaderCompression(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPXHeaderCompression mapping", value)
+	}
+	return
+}
+
+func AscendIPXHeaderCompression_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPXHeaderCompression_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPXHeaderCompression mapping", value)
+	return
+}
+
 func (a AscendIPXHeaderCompression) String() string {
 	if str, ok := AscendIPXHeaderCompression_Strings[a]; ok {
 		return str
@@ -4579,6 +5358,24 @@ var AscendCallingIDTypeOfNum_Strings = map[AscendCallingIDTypeOfNum]string{
 	AscendCallingIDTypeOfNum_Value_NetworkSpecific:     "Network-Specific",
 	AscendCallingIDTypeOfNum_Value_SubscriberNumber:    "Subscriber-Number",
 	AscendCallingIDTypeOfNum_Value_AbbreviatedNumber:   "Abbreviated-Number",
+}
+
+func AscendCallingIDTypeOfNum_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallingIDTypeOfNum_Strings[AscendCallingIDTypeOfNum(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallingIDTypeOfNum mapping", value)
+	}
+	return
+}
+
+func AscendCallingIDTypeOfNum_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallingIDTypeOfNum_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallingIDTypeOfNum mapping", value)
+	return
 }
 
 func (a AscendCallingIDTypeOfNum) String() string {
@@ -4654,6 +5451,24 @@ var AscendCallingIDNumberPlan_Strings = map[AscendCallingIDNumberPlan]string{
 	AscendCallingIDNumberPlan_Value_Private:       "Private",
 }
 
+func AscendCallingIDNumberPlan_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallingIDNumberPlan_Strings[AscendCallingIDNumberPlan(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallingIDNumberPlan mapping", value)
+	}
+	return
+}
+
+func AscendCallingIDNumberPlan_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallingIDNumberPlan_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallingIDNumberPlan mapping", value)
+	return
+}
+
 func (a AscendCallingIDNumberPlan) String() string {
 	if str, ok := AscendCallingIDNumberPlan_Strings[a]; ok {
 		return str
@@ -4719,6 +5534,24 @@ var AscendCallingIDPresentatn_Strings = map[AscendCallingIDPresentatn]string{
 	AscendCallingIDPresentatn_Value_Allowed:            "Allowed",
 	AscendCallingIDPresentatn_Value_Restricted:         "Restricted",
 	AscendCallingIDPresentatn_Value_NumberNotAvailable: "Number-Not-Available",
+}
+
+func AscendCallingIDPresentatn_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallingIDPresentatn_Strings[AscendCallingIDPresentatn(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallingIDPresentatn mapping", value)
+	}
+	return
+}
+
+func AscendCallingIDPresentatn_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallingIDPresentatn_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallingIDPresentatn mapping", value)
+	return
 }
 
 func (a AscendCallingIDPresentatn) String() string {
@@ -4790,6 +5623,24 @@ var AscendCallingIDScreening_Strings = map[AscendCallingIDScreening]string{
 	AscendCallingIDScreening_Value_NetworkProvided:    "Network-Provided",
 }
 
+func AscendCallingIDScreening_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallingIDScreening_Strings[AscendCallingIDScreening(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallingIDScreening mapping", value)
+	}
+	return
+}
+
+func AscendCallingIDScreening_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallingIDScreening_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallingIDScreening mapping", value)
+	return
+}
+
 func (a AscendCallingIDScreening) String() string {
 	if str, ok := AscendCallingIDScreening_Strings[a]; ok {
 		return str
@@ -4855,6 +5706,24 @@ var AscendBIREnable_Strings = map[AscendBIREnable]string{
 	AscendBIREnable_Value_BIREnableYes: "BIR-Enable-Yes",
 }
 
+func AscendBIREnable_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBIREnable_Strings[AscendBIREnable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBIREnable mapping", value)
+	}
+	return
+}
+
+func AscendBIREnable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBIREnable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBIREnable mapping", value)
+	return
+}
+
 func (a AscendBIREnable) String() string {
 	if str, ok := AscendBIREnable_Strings[a]; ok {
 		return str
@@ -4918,6 +5787,24 @@ const (
 var AscendBIRProxy_Strings = map[AscendBIRProxy]string{
 	AscendBIRProxy_Value_BIRProxyNo:  "BIR-Proxy-No",
 	AscendBIRProxy_Value_BIRProxyYes: "BIR-Proxy-Yes",
+}
+
+func AscendBIRProxy_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBIRProxy_Strings[AscendBIRProxy(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBIRProxy mapping", value)
+	}
+	return
+}
+
+func AscendBIRProxy_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBIRProxy_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBIRProxy mapping", value)
+	return
 }
 
 func (a AscendBIRProxy) String() string {
@@ -5136,6 +6023,24 @@ var AscendPPPoEEnable_Strings = map[AscendPPPoEEnable]string{
 	AscendPPPoEEnable_Value_PPPoEYes: "PPPoE-Yes",
 }
 
+func AscendPPPoEEnable_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPPPoEEnable_Strings[AscendPPPoEEnable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPPPoEEnable mapping", value)
+	}
+	return
+}
+
+func AscendPPPoEEnable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPPPoEEnable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPPPoEEnable mapping", value)
+	return
+}
+
 func (a AscendPPPoEEnable) String() string {
 	if str, ok := AscendPPPoEEnable_Strings[a]; ok {
 		return str
@@ -5201,6 +6106,24 @@ var AscendBridgeNonPPPoE_Strings = map[AscendBridgeNonPPPoE]string{
 	AscendBridgeNonPPPoE_Value_BridgeNonPPPoEYes: "Bridge-Non-PPPoE-Yes",
 }
 
+func AscendBridgeNonPPPoE_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBridgeNonPPPoE_Strings[AscendBridgeNonPPPoE(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBridgeNonPPPoE mapping", value)
+	}
+	return
+}
+
+func AscendBridgeNonPPPoE_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBridgeNonPPPoE_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBridgeNonPPPoE mapping", value)
+	return
+}
+
 func (a AscendBridgeNonPPPoE) String() string {
 	if str, ok := AscendBridgeNonPPPoE_Strings[a]; ok {
 		return str
@@ -5264,6 +6187,24 @@ const (
 var AscendATMDirect_Strings = map[AscendATMDirect]string{
 	AscendATMDirect_Value_ATMDirectNo:  "ATM-Direct-No",
 	AscendATMDirect_Value_ATMDirectYes: "ATM-Direct-Yes",
+}
+
+func AscendATMDirect_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendATMDirect_Strings[AscendATMDirect(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendATMDirect mapping", value)
+	}
+	return
+}
+
+func AscendATMDirect_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendATMDirect_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendATMDirect mapping", value)
+	return
 }
 
 func (a AscendATMDirect) String() string {
@@ -5523,6 +6464,24 @@ var AscendClientAssignWINS_Strings = map[AscendClientAssignWINS]string{
 	AscendClientAssignWINS_Value_WINSAssignYes: "WINS-Assign-Yes",
 }
 
+func AscendClientAssignWINS_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendClientAssignWINS_Strings[AscendClientAssignWINS(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendClientAssignWINS mapping", value)
+	}
+	return
+}
+
+func AscendClientAssignWINS_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendClientAssignWINS_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendClientAssignWINS mapping", value)
+	return
+}
+
 func (a AscendClientAssignWINS) String() string {
 	if str, ok := AscendClientAssignWINS_Strings[a]; ok {
 		return str
@@ -5596,6 +6555,24 @@ var AscendAuthType_Strings = map[AscendAuthType]string{
 	AscendAuthType_Value_AuthMSCHAP:  "Auth-MS-CHAP",
 }
 
+func AscendAuthType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendAuthType_Strings[AscendAuthType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendAuthType mapping", value)
+	}
+	return
+}
+
+func AscendAuthType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendAuthType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendAuthType mapping", value)
+	return
+}
+
 func (a AscendAuthType) String() string {
 	if str, ok := AscendAuthType_Strings[a]; ok {
 		return str
@@ -5659,6 +6636,24 @@ const (
 var AscendPortRedirProtocol_Strings = map[AscendPortRedirProtocol]string{
 	AscendPortRedirProtocol_Value_AscendProtoTCP: "Ascend-Proto-TCP",
 	AscendPortRedirProtocol_Value_AscendProtoUDP: "Ascend-Proto-UDP",
+}
+
+func AscendPortRedirProtocol_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPortRedirProtocol_Strings[AscendPortRedirProtocol(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPortRedirProtocol mapping", value)
+	}
+	return
+}
+
+func AscendPortRedirProtocol_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPortRedirProtocol_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPortRedirProtocol mapping", value)
+	return
 }
 
 func (a AscendPortRedirProtocol) String() string {
@@ -5832,6 +6827,24 @@ var AscendIPPoolChaining_Strings = map[AscendIPPoolChaining]string{
 	AscendIPPoolChaining_Value_IPPoolChainingYes: "IP-Pool-Chaining-Yes",
 }
 
+func AscendIPPoolChaining_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPPoolChaining_Strings[AscendIPPoolChaining(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPPoolChaining mapping", value)
+	}
+	return
+}
+
+func AscendIPPoolChaining_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPPoolChaining_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPPoolChaining mapping", value)
+	return
+}
+
 func (a AscendIPPoolChaining) String() string {
 	if str, ok := AscendIPPoolChaining_Strings[a]; ok {
 		return str
@@ -5954,6 +6967,24 @@ var AscendIPTOS_Strings = map[AscendIPTOS]string{
 	AscendIPTOS_Value_IPTOSLatency:     "IP-TOS-Latency",
 }
 
+func AscendIPTOS_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPTOS_Strings[AscendIPTOS(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPTOS mapping", value)
+	}
+	return
+}
+
+func AscendIPTOS_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPTOS_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPTOS mapping", value)
+	return
+}
+
 func (a AscendIPTOS) String() string {
 	if str, ok := AscendIPTOS_Strings[a]; ok {
 		return str
@@ -6031,6 +7062,24 @@ var AscendIPTOSPrecedence_Strings = map[AscendIPTOSPrecedence]string{
 	AscendIPTOSPrecedence_Value_IPTOSPrecedencePriSeven:  "IP-TOS-Precedence-Pri-Seven",
 }
 
+func AscendIPTOSPrecedence_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPTOSPrecedence_Strings[AscendIPTOSPrecedence(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPTOSPrecedence mapping", value)
+	}
+	return
+}
+
+func AscendIPTOSPrecedence_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPTOSPrecedence_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPTOSPrecedence mapping", value)
+	return
+}
+
 func (a AscendIPTOSPrecedence) String() string {
 	if str, ok := AscendIPTOSPrecedence_Strings[a]; ok {
 		return str
@@ -6096,6 +7145,24 @@ var AscendIPTOSApplyTo_Strings = map[AscendIPTOSApplyTo]string{
 	AscendIPTOSApplyTo_Value_IPTOSApplyToIncoming: "IP-TOS-Apply-To-Incoming",
 	AscendIPTOSApplyTo_Value_IPTOSApplyToOutgoing: "IP-TOS-Apply-To-Outgoing",
 	AscendIPTOSApplyTo_Value_IPTOSApplyToBoth:     "IP-TOS-Apply-To-Both",
+}
+
+func AscendIPTOSApplyTo_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPTOSApplyTo_Strings[AscendIPTOSApplyTo(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPTOSApplyTo mapping", value)
+	}
+	return
+}
+
+func AscendIPTOSApplyTo_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPTOSApplyTo_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPTOSApplyTo mapping", value)
+	return
 }
 
 func (a AscendIPTOSApplyTo) String() string {
@@ -6355,6 +7422,24 @@ var AscendDslRateType_Strings = map[AscendDslRateType]string{
 	AscendDslRateType_Value_RateTypeAdslCap:     "Rate-Type-AdslCap",
 	AscendDslRateType_Value_RateTypeAdslDmtCell: "Rate-Type-AdslDmtCell",
 	AscendDslRateType_Value_RateTypeAdslDmt:     "Rate-Type-AdslDmt",
+}
+
+func AscendDslRateType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDslRateType_Strings[AscendDslRateType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDslRateType mapping", value)
+	}
+	return
+}
+
+func AscendDslRateType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDslRateType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDslRateType mapping", value)
+	return
 }
 
 func (a AscendDslRateType) String() string {
@@ -6630,6 +7715,24 @@ var AscendSourceIPCheck_Strings = map[AscendSourceIPCheck]string{
 	AscendSourceIPCheck_Value_SourceIPCheckYes: "Source-IP-Check-Yes",
 }
 
+func AscendSourceIPCheck_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendSourceIPCheck_Strings[AscendSourceIPCheck(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendSourceIPCheck mapping", value)
+	}
+	return
+}
+
+func AscendSourceIPCheck_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendSourceIPCheck_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendSourceIPCheck mapping", value)
+	return
+}
+
 func (a AscendSourceIPCheck) String() string {
 	if str, ok := AscendSourceIPCheck_Strings[a]; ok {
 		return str
@@ -6693,6 +7796,24 @@ const (
 var AscendDslRateMode_Strings = map[AscendDslRateMode]string{
 	AscendDslRateMode_Value_RateModeAutoBaud: "Rate-Mode-AutoBaud",
 	AscendDslRateMode_Value_RateModeSingle:   "Rate-Mode-Single",
+}
+
+func AscendDslRateMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDslRateMode_Strings[AscendDslRateMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDslRateMode mapping", value)
+	}
+	return
+}
+
+func AscendDslRateMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDslRateMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDslRateMode mapping", value)
+	return
 }
 
 func (a AscendDslRateMode) String() string {
@@ -6806,6 +7927,24 @@ var AscendDslUpstreamLimit_Strings = map[AscendDslUpstreamLimit]string{
 	AscendDslUpstreamLimit_Value_AdsldmtUp384000:  "adsldmt-up-384000",
 	AscendDslUpstreamLimit_Value_AdsldmtUp256000:  "adsldmt-up-256000",
 	AscendDslUpstreamLimit_Value_AdsldmtUp128000:  "adsldmt-up-128000",
+}
+
+func AscendDslUpstreamLimit_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDslUpstreamLimit_Strings[AscendDslUpstreamLimit(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDslUpstreamLimit mapping", value)
+	}
+	return
+}
+
+func AscendDslUpstreamLimit_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDslUpstreamLimit_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDslUpstreamLimit mapping", value)
+	return
 }
 
 func (a AscendDslUpstreamLimit) String() string {
@@ -6937,6 +8076,24 @@ var AscendDslDownstreamLimit_Strings = map[AscendDslDownstreamLimit]string{
 	AscendDslDownstreamLimit_Value_AdsldmtDn384000:  "adsldmt-dn-384000",
 	AscendDslDownstreamLimit_Value_AdsldmtDn256000:  "adsldmt-dn-256000",
 	AscendDslDownstreamLimit_Value_AdsldmtDn128000:  "adsldmt-dn-128000",
+}
+
+func AscendDslDownstreamLimit_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDslDownstreamLimit_Strings[AscendDslDownstreamLimit(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDslDownstreamLimit mapping", value)
+	}
+	return
+}
+
+func AscendDslDownstreamLimit_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDslDownstreamLimit_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDslDownstreamLimit mapping", value)
+	return
 }
 
 func (a AscendDslDownstreamLimit) String() string {
@@ -7402,6 +8559,24 @@ var AscendNumberingPlanID_Strings = map[AscendNumberingPlanID]string{
 	AscendNumberingPlanID_Value_PrivateNumberingPlan: "Private-Numbering-Plan",
 }
 
+func AscendNumberingPlanID_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendNumberingPlanID_Strings[AscendNumberingPlanID(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendNumberingPlanID mapping", value)
+	}
+	return
+}
+
+func AscendNumberingPlanID_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendNumberingPlanID_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendNumberingPlanID mapping", value)
+	return
+}
+
 func (a AscendNumberingPlanID) String() string {
 	if str, ok := AscendNumberingPlanID_Strings[a]; ok {
 		return str
@@ -7465,6 +8640,24 @@ const (
 var AscendFRLinkStatusDLCI_Strings = map[AscendFRLinkStatusDLCI]string{
 	AscendFRLinkStatusDLCI_Value_AscendFRLMIDlci0:    "Ascend-FR-LMI-Dlci-0",
 	AscendFRLinkStatusDLCI_Value_AscendFRLMIDlci1023: "Ascend-FR-LMI-Dlci-1023",
+}
+
+func AscendFRLinkStatusDLCI_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFRLinkStatusDLCI_Strings[AscendFRLinkStatusDLCI(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFRLinkStatusDLCI mapping", value)
+	}
+	return
+}
+
+func AscendFRLinkStatusDLCI_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFRLinkStatusDLCI_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFRLinkStatusDLCI mapping", value)
+	return
 }
 
 func (a AscendFRLinkStatusDLCI) String() string {
@@ -7928,6 +9121,24 @@ var AscendCBCPEnable_Strings = map[AscendCBCPEnable]string{
 	AscendCBCPEnable_Value_CBCPEnabled:    "CBCP-Enabled",
 }
 
+func AscendCBCPEnable_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCBCPEnable_Strings[AscendCBCPEnable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCBCPEnable mapping", value)
+	}
+	return
+}
+
+func AscendCBCPEnable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCBCPEnable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCBCPEnable mapping", value)
+	return
+}
+
 func (a AscendCBCPEnable) String() string {
 	if str, ok := AscendCBCPEnable_Strings[a]; ok {
 		return str
@@ -7997,6 +9208,24 @@ var AscendCBCPMode_Strings = map[AscendCBCPMode]string{
 	AscendCBCPMode_Value_CBCPProfileCallback: "CBCP-Profile-Callback",
 	AscendCBCPMode_Value_CBCPAnyOrNo:         "CBCP-Any-Or-No",
 	AscendCBCPMode_Value_CBCPOff:             "CBCP-Off",
+}
+
+func AscendCBCPMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCBCPMode_Strings[AscendCBCPMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCBCPMode mapping", value)
+	}
+	return
+}
+
+func AscendCBCPMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCBCPMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCBCPMode mapping", value)
+	return
 }
 
 func (a AscendCBCPMode) String() string {
@@ -8272,6 +9501,24 @@ var AscendAppletalkPeerMode_Strings = map[AscendAppletalkPeerMode]string{
 	AscendAppletalkPeerMode_Value_AppletalkPeerDialin: "Appletalk-Peer-Dialin",
 }
 
+func AscendAppletalkPeerMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendAppletalkPeerMode_Strings[AscendAppletalkPeerMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendAppletalkPeerMode mapping", value)
+	}
+	return
+}
+
+func AscendAppletalkPeerMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendAppletalkPeerMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendAppletalkPeerMode mapping", value)
+	return
+}
+
 func (a AscendAppletalkPeerMode) String() string {
 	if str, ok := AscendAppletalkPeerMode_Strings[a]; ok {
 		return str
@@ -8335,6 +9582,24 @@ const (
 var AscendRouteAppletalk_Strings = map[AscendRouteAppletalk]string{
 	AscendRouteAppletalk_Value_RouteAppletalkNo:  "Route-Appletalk-No",
 	AscendRouteAppletalk_Value_RouteAppletalkYes: "Route-Appletalk-Yes",
+}
+
+func AscendRouteAppletalk_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendRouteAppletalk_Strings[AscendRouteAppletalk(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendRouteAppletalk mapping", value)
+	}
+	return
+}
+
+func AscendRouteAppletalk_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendRouteAppletalk_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendRouteAppletalk mapping", value)
+	return
 }
 
 func (a AscendRouteAppletalk) String() string {
@@ -8838,6 +10103,24 @@ var AscendTemporaryRtes_Strings = map[AscendTemporaryRtes]string{
 	AscendTemporaryRtes_Value_TempRtesYes: "Temp-Rtes-Yes",
 }
 
+func AscendTemporaryRtes_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendTemporaryRtes_Strings[AscendTemporaryRtes(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendTemporaryRtes mapping", value)
+	}
+	return
+}
+
+func AscendTemporaryRtes_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendTemporaryRtes_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendTemporaryRtes mapping", value)
+	return
+}
+
 func (a AscendTemporaryRtes) String() string {
 	if str, ok := AscendTemporaryRtes_Strings[a]; ok {
 		return str
@@ -8903,6 +10186,24 @@ var AscendTunnelingProtocol_Strings = map[AscendTunnelingProtocol]string{
 	AscendTunnelingProtocol_Value_VTPTunnel:  "VTP-Tunnel",
 }
 
+func AscendTunnelingProtocol_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendTunnelingProtocol_Strings[AscendTunnelingProtocol(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendTunnelingProtocol mapping", value)
+	}
+	return
+}
+
+func AscendTunnelingProtocol_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendTunnelingProtocol_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendTunnelingProtocol mapping", value)
+	return
+}
+
 func (a AscendTunnelingProtocol) String() string {
 	if str, ok := AscendTunnelingProtocol_Strings[a]; ok {
 		return str
@@ -8966,6 +10267,24 @@ const (
 var AscendSharedProfileEnable_Strings = map[AscendSharedProfileEnable]string{
 	AscendSharedProfileEnable_Value_SharedProfileNo:  "Shared-Profile-No",
 	AscendSharedProfileEnable_Value_SharedProfileYes: "Shared-Profile-Yes",
+}
+
+func AscendSharedProfileEnable_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendSharedProfileEnable_Strings[AscendSharedProfileEnable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendSharedProfileEnable mapping", value)
+	}
+	return
+}
+
+func AscendSharedProfileEnable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendSharedProfileEnable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendSharedProfileEnable mapping", value)
+	return
 }
 
 func (a AscendSharedProfileEnable) String() string {
@@ -9221,6 +10540,24 @@ var AscendDialoutAllowed_Strings = map[AscendDialoutAllowed]string{
 	AscendDialoutAllowed_Value_DialoutAllowed:    "Dialout-Allowed",
 }
 
+func AscendDialoutAllowed_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDialoutAllowed_Strings[AscendDialoutAllowed(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDialoutAllowed mapping", value)
+	}
+	return
+}
+
+func AscendDialoutAllowed_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDialoutAllowed_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDialoutAllowed mapping", value)
+	return
+}
+
 func (a AscendDialoutAllowed) String() string {
 	if str, ok := AscendDialoutAllowed_Strings[a]; ok {
 		return str
@@ -9333,6 +10670,24 @@ const (
 var AscendBACPEnable_Strings = map[AscendBACPEnable]string{
 	AscendBACPEnable_Value_BACPNo:  "BACP-No",
 	AscendBACPEnable_Value_BACPYes: "BACP-Yes",
+}
+
+func AscendBACPEnable_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBACPEnable_Strings[AscendBACPEnable(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBACPEnable mapping", value)
+	}
+	return
+}
+
+func AscendBACPEnable_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBACPEnable_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBACPEnable mapping", value)
+	return
 }
 
 func (a AscendBACPEnable) String() string {
@@ -9555,6 +10910,24 @@ var AscendClientAssignDNS_Strings = map[AscendClientAssignDNS]string{
 	AscendClientAssignDNS_Value_DNSAssignYes: "DNS-Assign-Yes",
 }
 
+func AscendClientAssignDNS_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendClientAssignDNS_Strings[AscendClientAssignDNS(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendClientAssignDNS mapping", value)
+	}
+	return
+}
+
+func AscendClientAssignDNS_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendClientAssignDNS_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendClientAssignDNS mapping", value)
+	return
+}
+
 func (a AscendClientAssignDNS) String() string {
 	if str, ok := AscendClientAssignDNS_Strings[a]; ok {
 		return str
@@ -9620,6 +10993,24 @@ var AscendUserAcctType_Strings = map[AscendUserAcctType]string{
 	AscendUserAcctType_Value_AscendUserAcctNone:        "Ascend-User-Acct-None",
 	AscendUserAcctType_Value_AscendUserAcctUser:        "Ascend-User-Acct-User",
 	AscendUserAcctType_Value_AscendUserAcctUserDefault: "Ascend-User-Acct-User-Default",
+}
+
+func AscendUserAcctType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendUserAcctType_Strings[AscendUserAcctType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendUserAcctType mapping", value)
+	}
+	return
+}
+
+func AscendUserAcctType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendUserAcctType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendUserAcctType mapping", value)
+	return
 }
 
 func (a AscendUserAcctType) String() string {
@@ -9885,6 +11276,24 @@ const (
 var AscendUserAcctBase_Strings = map[AscendUserAcctBase]string{
 	AscendUserAcctBase_Value_Base10: "Base-10",
 	AscendUserAcctBase_Value_Base16: "Base-16",
+}
+
+func AscendUserAcctBase_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendUserAcctBase_Strings[AscendUserAcctBase(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendUserAcctBase mapping", value)
+	}
+	return
+}
+
+func AscendUserAcctBase_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendUserAcctBase_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendUserAcctBase mapping", value)
+	return
 }
 
 func (a AscendUserAcctBase) String() string {
@@ -10201,6 +11610,24 @@ var AscendDHCPReply_Strings = map[AscendDHCPReply]string{
 	AscendDHCPReply_Value_DHCPReplyYes: "DHCP-Reply-Yes",
 }
 
+func AscendDHCPReply_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDHCPReply_Strings[AscendDHCPReply(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDHCPReply mapping", value)
+	}
+	return
+}
+
+func AscendDHCPReply_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDHCPReply_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDHCPReply mapping", value)
+	return
+}
+
 func (a AscendDHCPReply) String() string {
 	if str, ok := AscendDHCPReply_Strings[a]; ok {
 		return str
@@ -10323,6 +11750,24 @@ var AscendExpectCallback_Strings = map[AscendExpectCallback]string{
 	AscendExpectCallback_Value_ExpectCallbackYes: "Expect-Callback-Yes",
 }
 
+func AscendExpectCallback_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendExpectCallback_Strings[AscendExpectCallback(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendExpectCallback mapping", value)
+	}
+	return
+}
+
+func AscendExpectCallback_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendExpectCallback_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendExpectCallback mapping", value)
+	return
+}
+
 func (a AscendExpectCallback) String() string {
 	if str, ok := AscendExpectCallback_Strings[a]; ok {
 		return str
@@ -10386,6 +11831,24 @@ const (
 var AscendEventType_Strings = map[AscendEventType]string{
 	AscendEventType_Value_AscendColdStart:    "Ascend-ColdStart",
 	AscendEventType_Value_AscendSessionEvent: "Ascend-Session-Event",
+}
+
+func AscendEventType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendEventType_Strings[AscendEventType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendEventType mapping", value)
+	}
+	return
+}
+
+func AscendEventType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendEventType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendEventType mapping", value)
+	return
 }
 
 func (a AscendEventType) String() string {
@@ -10702,6 +12165,24 @@ var AscendMulticastClient_Strings = map[AscendMulticastClient]string{
 	AscendMulticastClient_Value_MulticastYes: "Multicast-Yes",
 }
 
+func AscendMulticastClient_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendMulticastClient_Strings[AscendMulticastClient(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendMulticastClient mapping", value)
+	}
+	return
+}
+
+func AscendMulticastClient_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendMulticastClient_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendMulticastClient mapping", value)
+	return
+}
+
 func (a AscendMulticastClient) String() string {
 	if str, ok := AscendMulticastClient_Strings[a]; ok {
 		return str
@@ -10861,6 +12342,24 @@ var AscendFRLinkUp_Strings = map[AscendFRLinkUp]string{
 	AscendFRLinkUp_Value_AscendLinkUpAlwaysUp: "Ascend-LinkUp-AlwaysUp",
 }
 
+func AscendFRLinkUp_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFRLinkUp_Strings[AscendFRLinkUp(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFRLinkUp mapping", value)
+	}
+	return
+}
+
+func AscendFRLinkUp_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFRLinkUp_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFRLinkUp mapping", value)
+	return
+}
+
 func (a AscendFRLinkUp) String() string {
 	if str, ok := AscendFRLinkUp_Strings[a]; ok {
 		return str
@@ -10985,6 +12484,24 @@ var AscendFRType_Strings = map[AscendFRType]string{
 	AscendFRType_Value_AscendFRNNI: "Ascend-FR-NNI",
 }
 
+func AscendFRType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFRType_Strings[AscendFRType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFRType mapping", value)
+	}
+	return
+}
+
+func AscendFRType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFRType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFRType mapping", value)
+	return
+}
+
 func (a AscendFRType) String() string {
 	if str, ok := AscendFRType_Strings[a]; ok {
 		return str
@@ -11050,6 +12567,24 @@ var AscendFRLinkMgt_Strings = map[AscendFRLinkMgt]string{
 	AscendFRLinkMgt_Value_AscendFRNoLinkMgt: "Ascend-FR-No-Link-Mgt",
 	AscendFRLinkMgt_Value_AscendFRT1617D:    "Ascend-FR-T1-617D",
 	AscendFRLinkMgt_Value_AscendFRQ933A:     "Ascend-FR-Q-933A",
+}
+
+func AscendFRLinkMgt_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFRLinkMgt_Strings[AscendFRLinkMgt(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFRLinkMgt mapping", value)
+	}
+	return
+}
+
+func AscendFRLinkMgt_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFRLinkMgt_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFRLinkMgt mapping", value)
+	return
 }
 
 func (a AscendFRLinkMgt) String() string {
@@ -11669,6 +13204,24 @@ var AscendTSIdleMode_Strings = map[AscendTSIdleMode]string{
 	AscendTSIdleMode_Value_TSIdleInputOutput: "TS-Idle-Input-Output",
 }
 
+func AscendTSIdleMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendTSIdleMode_Strings[AscendTSIdleMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendTSIdleMode mapping", value)
+	}
+	return
+}
+
+func AscendTSIdleMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendTSIdleMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendTSIdleMode mapping", value)
+	return
+}
+
 func (a AscendTSIdleMode) String() string {
 	if str, ok := AscendTSIdleMode_Strings[a]; ok {
 		return str
@@ -11734,6 +13287,24 @@ var AscendDBAMonitor_Strings = map[AscendDBAMonitor]string{
 	AscendDBAMonitor_Value_DBATransmit:     "DBA-Transmit",
 	AscendDBAMonitor_Value_DBATransmitRecv: "DBA-Transmit-Recv",
 	AscendDBAMonitor_Value_DBANone:         "DBA-None",
+}
+
+func AscendDBAMonitor_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDBAMonitor_Strings[AscendDBAMonitor(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDBAMonitor mapping", value)
+	}
+	return
+}
+
+func AscendDBAMonitor_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDBAMonitor_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDBAMonitor mapping", value)
+	return
 }
 
 func (a AscendDBAMonitor) String() string {
@@ -12009,6 +13580,24 @@ var AscendFT1Caller_Strings = map[AscendFT1Caller]string{
 	AscendFT1Caller_Value_FT1Yes: "FT1-Yes",
 }
 
+func AscendFT1Caller_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFT1Caller_Strings[AscendFT1Caller(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFT1Caller mapping", value)
+	}
+	return
+}
+
+func AscendFT1Caller_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFT1Caller_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFT1Caller mapping", value)
+	return
+}
+
 func (a AscendFT1Caller) String() string {
 	if str, ok := AscendFT1Caller_Strings[a]; ok {
 		return str
@@ -12174,6 +13763,24 @@ var AscendCallType_Strings = map[AscendCallType]string{
 	AscendCallType_Value_PermSwitched: "Perm/Switched",
 	AscendCallType_Value_AODI:         "AO/DI",
 	AscendCallType_Value_MegaMax:      "MegaMax",
+}
+
+func AscendCallType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallType_Strings[AscendCallType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallType mapping", value)
+	}
+	return
+}
+
+func AscendCallType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallType mapping", value)
+	return
 }
 
 func (a AscendCallType) String() string {
@@ -13532,6 +15139,24 @@ var AscendDisconnectCause_Strings = map[AscendDisconnectCause]string{
 	AscendDisconnectCause_Value_MaxCallDurationReached:     "Max-Call-Duration-Reached",
 }
 
+func AscendDisconnectCause_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDisconnectCause_Strings[AscendDisconnectCause(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDisconnectCause mapping", value)
+	}
+	return
+}
+
+func AscendDisconnectCause_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDisconnectCause_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDisconnectCause mapping", value)
+	return
+}
+
 func (a AscendDisconnectCause) String() string {
 	if str, ok := AscendDisconnectCause_Strings[a]; ok {
 		return str
@@ -13671,6 +15296,24 @@ var AscendConnectProgress_Strings = map[AscendConnectProgress]string{
 	AscendConnectProgress_Value_V110StateCarrier:       "V110-State-Carrier",
 	AscendConnectProgress_Value_V110StateReset:         "V110-State-Reset",
 	AscendConnectProgress_Value_V110StateClosed:        "V110-State-Closed",
+}
+
+func AscendConnectProgress_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendConnectProgress_Strings[AscendConnectProgress(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendConnectProgress mapping", value)
+	}
+	return
+}
+
+func AscendConnectProgress_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendConnectProgress_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendConnectProgress mapping", value)
+	return
 }
 
 func (a AscendConnectProgress) String() string {
@@ -13909,6 +15552,24 @@ var AscendTokenImmediate_Strings = map[AscendTokenImmediate]string{
 	AscendTokenImmediate_Value_TokImmYes: "Tok-Imm-Yes",
 }
 
+func AscendTokenImmediate_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendTokenImmediate_Strings[AscendTokenImmediate(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendTokenImmediate mapping", value)
+	}
+	return
+}
+
+func AscendTokenImmediate_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendTokenImmediate_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendTokenImmediate mapping", value)
+	return
+}
+
 func (a AscendTokenImmediate) String() string {
 	if str, ok := AscendTokenImmediate_Strings[a]; ok {
 		return str
@@ -13972,6 +15633,24 @@ const (
 var AscendRequireAuth_Strings = map[AscendRequireAuth]string{
 	AscendRequireAuth_Value_NotRequireAuth: "Not-Require-Auth",
 	AscendRequireAuth_Value_RequireAuth:    "Require-Auth",
+}
+
+func AscendRequireAuth_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendRequireAuth_Strings[AscendRequireAuth(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendRequireAuth mapping", value)
+	}
+	return
+}
+
+func AscendRequireAuth_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendRequireAuth_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendRequireAuth mapping", value)
+	return
 }
 
 func (a AscendRequireAuth) String() string {
@@ -14470,6 +16149,24 @@ var AscendPWWarntime_Strings = map[AscendPWWarntime]string{
 	AscendPWWarntime_Value_DaysOfWarning: "Days-Of-Warning",
 }
 
+func AscendPWWarntime_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPWWarntime_Strings[AscendPWWarntime(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPWWarntime mapping", value)
+	}
+	return
+}
+
+func AscendPWWarntime_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPWWarntime_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPWWarntime mapping", value)
+	return
+}
+
 func (a AscendPWWarntime) String() string {
 	if str, ok := AscendPWWarntime_Strings[a]; ok {
 		return str
@@ -14531,6 +16228,24 @@ const (
 
 var AscendPWLifetime_Strings = map[AscendPWLifetime]string{
 	AscendPWLifetime_Value_LifetimeInDays: "Lifetime-In-Days",
+}
+
+func AscendPWLifetime_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPWLifetime_Strings[AscendPWLifetime(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPWLifetime mapping", value)
+	}
+	return
+}
+
+func AscendPWLifetime_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPWLifetime_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPWLifetime mapping", value)
+	return
 }
 
 func (a AscendPWLifetime) String() string {
@@ -14645,6 +16360,24 @@ var AscendPPPVJSlotComp_Strings = map[AscendPPPVJSlotComp]string{
 	AscendPPPVJSlotComp_Value_VJSlotCompNo: "VJ-Slot-Comp-No",
 }
 
+func AscendPPPVJSlotComp_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPPPVJSlotComp_Strings[AscendPPPVJSlotComp(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPPPVJSlotComp mapping", value)
+	}
+	return
+}
+
+func AscendPPPVJSlotComp_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPPPVJSlotComp_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPPPVJSlotComp mapping", value)
+	return
+}
+
 func (a AscendPPPVJSlotComp) String() string {
 	if str, ok := AscendPPPVJSlotComp_Strings[a]; ok {
 		return str
@@ -14706,6 +16439,24 @@ const (
 
 var AscendPPPVJ1172_Strings = map[AscendPPPVJ1172]string{
 	AscendPPPVJ1172_Value_PPPVJ1172: "PPP-VJ-1172",
+}
+
+func AscendPPPVJ1172_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPPPVJ1172_Strings[AscendPPPVJ1172(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPPPVJ1172 mapping", value)
+	}
+	return
+}
+
+func AscendPPPVJ1172_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPPPVJ1172_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPPPVJ1172 mapping", value)
+	return
 }
 
 func (a AscendPPPVJ1172) String() string {
@@ -15112,6 +16863,24 @@ var AscendIPXPeerMode_Strings = map[AscendIPXPeerMode]string{
 	AscendIPXPeerMode_Value_IPXPeerDialin: "IPX-Peer-Dialin",
 }
 
+func AscendIPXPeerMode_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendIPXPeerMode_Strings[AscendIPXPeerMode(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendIPXPeerMode mapping", value)
+	}
+	return
+}
+
+func AscendIPXPeerMode_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendIPXPeerMode_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendIPXPeerMode mapping", value)
+	return
+}
+
 func (a AscendIPXPeerMode) String() string {
 	if str, ok := AscendIPXPeerMode_Strings[a]; ok {
 		return str
@@ -15326,6 +17095,24 @@ const (
 var AscendFRDirect_Strings = map[AscendFRDirect]string{
 	AscendFRDirect_Value_FRDirectNo:  "FR-Direct-No",
 	AscendFRDirect_Value_FRDirectYes: "FR-Direct-Yes",
+}
+
+func AscendFRDirect_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendFRDirect_Strings[AscendFRDirect(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendFRDirect mapping", value)
+	}
+	return
+}
+
+func AscendFRDirect_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendFRDirect_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendFRDirect mapping", value)
+	return
 }
 
 func (a AscendFRDirect) String() string {
@@ -15544,6 +17331,24 @@ var AscendHandleIPX_Strings = map[AscendHandleIPX]string{
 	AscendHandleIPX_Value_HandleIPXNone:   "Handle-IPX-None",
 	AscendHandleIPX_Value_HandleIPXClient: "Handle-IPX-Client",
 	AscendHandleIPX_Value_HandleIPXServer: "Handle-IPX-Server",
+}
+
+func AscendHandleIPX_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendHandleIPX_Strings[AscendHandleIPX(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendHandleIPX mapping", value)
+	}
+	return
+}
+
+func AscendHandleIPX_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendHandleIPX_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendHandleIPX mapping", value)
+	return
 }
 
 func (a AscendHandleIPX) String() string {
@@ -15790,6 +17595,24 @@ var AscendPRINumberType_Strings = map[AscendPRINumberType]string{
 	AscendPRINumberType_Value_AbbrevNumber:      "Abbrev-Number",
 }
 
+func AscendPRINumberType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendPRINumberType_Strings[AscendPRINumberType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendPRINumberType mapping", value)
+	}
+	return
+}
+
+func AscendPRINumberType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendPRINumberType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendPRINumberType mapping", value)
+	return
+}
+
 func (a AscendPRINumberType) String() string {
 	if str, ok := AscendPRINumberType_Strings[a]; ok {
 		return str
@@ -15949,6 +17772,24 @@ var AscendRouteIP_Strings = map[AscendRouteIP]string{
 	AscendRouteIP_Value_RouteIPYes: "Route-IP-Yes",
 }
 
+func AscendRouteIP_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendRouteIP_Strings[AscendRouteIP(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendRouteIP mapping", value)
+	}
+	return
+}
+
+func AscendRouteIP_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendRouteIP_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendRouteIP mapping", value)
+	return
+}
+
 func (a AscendRouteIP) String() string {
 	if str, ok := AscendRouteIP_Strings[a]; ok {
 		return str
@@ -16014,6 +17855,24 @@ var AscendRouteIPX_Strings = map[AscendRouteIPX]string{
 	AscendRouteIPX_Value_RouteIPXYes: "Route-IPX-Yes",
 }
 
+func AscendRouteIPX_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendRouteIPX_Strings[AscendRouteIPX(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendRouteIPX mapping", value)
+	}
+	return
+}
+
+func AscendRouteIPX_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendRouteIPX_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendRouteIPX mapping", value)
+	return
+}
+
 func (a AscendRouteIPX) String() string {
 	if str, ok := AscendRouteIPX_Strings[a]; ok {
 		return str
@@ -16077,6 +17936,24 @@ const (
 var AscendBridge_Strings = map[AscendBridge]string{
 	AscendBridge_Value_BridgeNo:  "Bridge-No",
 	AscendBridge_Value_BridgeYes: "Bridge-Yes",
+}
+
+func AscendBridge_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendBridge_Strings[AscendBridge(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendBridge mapping", value)
+	}
+	return
+}
+
+func AscendBridge_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendBridge_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendBridge mapping", value)
+	return
 }
 
 func (a AscendBridge) String() string {
@@ -16146,6 +18023,24 @@ var AscendSendAuth_Strings = map[AscendSendAuth]string{
 	AscendSendAuth_Value_SendAuthPAP:    "Send-Auth-PAP",
 	AscendSendAuth_Value_SendAuthCHAP:   "Send-Auth-CHAP",
 	AscendSendAuth_Value_SendAuthMSCHAP: "Send-Auth-MS-CHAP",
+}
+
+func AscendSendAuth_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendSendAuth_Strings[AscendSendAuth(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendSendAuth mapping", value)
+	}
+	return
+}
+
+func AscendSendAuth_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendSendAuth_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendSendAuth mapping", value)
+	return
 }
 
 func (a AscendSendAuth) String() string {
@@ -16309,6 +18204,24 @@ var AscendLinkCompression_Strings = map[AscendLinkCompression]string{
 	AscendLinkCompression_Value_LinkCompStac:       "Link-Comp-Stac",
 	AscendLinkCompression_Value_LinkCompStacDraft9: "Link-Comp-Stac-Draft-9",
 	AscendLinkCompression_Value_LinkCompMSStac:     "Link-Comp-MS-Stac",
+}
+
+func AscendLinkCompression_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendLinkCompression_Strings[AscendLinkCompression(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendLinkCompression mapping", value)
+	}
+	return
+}
+
+func AscendLinkCompression_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendLinkCompression_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendLinkCompression mapping", value)
+	return
 }
 
 func (a AscendLinkCompression) String() string {
@@ -16661,6 +18574,24 @@ var AscendHistoryWeighType_Strings = map[AscendHistoryWeighType]string{
 	AscendHistoryWeighType_Value_HistoryConstant:  "History-Constant",
 	AscendHistoryWeighType_Value_HistoryLinear:    "History-Linear",
 	AscendHistoryWeighType_Value_HistoryQuadratic: "History-Quadratic",
+}
+
+func AscendHistoryWeighType_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendHistoryWeighType_Strings[AscendHistoryWeighType(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendHistoryWeighType mapping", value)
+	}
+	return
+}
+
+func AscendHistoryWeighType_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendHistoryWeighType_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendHistoryWeighType mapping", value)
+	return
 }
 
 func (a AscendHistoryWeighType) String() string {
@@ -17144,6 +19075,24 @@ var AscendCallback_Strings = map[AscendCallback]string{
 	AscendCallback_Value_CallbackYes: "Callback-Yes",
 }
 
+func AscendCallback_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendCallback_Strings[AscendCallback(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendCallback mapping", value)
+	}
+	return
+}
+
+func AscendCallback_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendCallback_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendCallback mapping", value)
+	return
+}
+
 func (a AscendCallback) String() string {
 	if str, ok := AscendCallback_Strings[a]; ok {
 		return str
@@ -17339,6 +19288,24 @@ var AscendDataSvc_Strings = map[AscendDataSvc]string{
 	AscendDataSvc_Value_SwitchedFR:                  "Switched-FR",
 }
 
+func AscendDataSvc_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendDataSvc_Strings[AscendDataSvc(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendDataSvc mapping", value)
+	}
+	return
+}
+
+func AscendDataSvc_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendDataSvc_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendDataSvc mapping", value)
+	return
+}
+
 func (a AscendDataSvc) String() string {
 	if str, ok := AscendDataSvc_Strings[a]; ok {
 		return str
@@ -17402,6 +19369,24 @@ const (
 var AscendForce56_Strings = map[AscendForce56]string{
 	AscendForce56_Value_Force56No:  "Force-56-No",
 	AscendForce56_Value_Force56Yes: "Force-56-Yes",
+}
+
+func AscendForce56_GetValueString(value uint32) (str string, err error) {
+	str, ok := AscendForce56_Strings[AscendForce56(value)]
+	if !ok {
+		err = fmt.Errorf("value: %d not found in AscendForce56 mapping", value)
+	}
+	return
+}
+
+func AscendForce56_GetValueNumber(value string) (str uint32, err error) {
+	for k, v := range AscendForce56_Strings {
+		if v == value {
+			return uint32(k), nil
+		}
+	}
+	err = fmt.Errorf("value: %s not found in AscendForce56 mapping", value)
+	return
 }
 
 func (a AscendForce56) String() string {
