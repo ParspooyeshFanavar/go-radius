@@ -63,6 +63,7 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 // ResponseWriter is used by RADIUS servers when replying to a RADIUS request.
 type ResponseWriter interface {
 	Write(packet *Packet) error
+	WriteBytes(packet []byte) error
 }
 
 // SecretSource supplies RADIUS servers with the secret that should be used for

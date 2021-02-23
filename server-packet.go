@@ -25,6 +25,13 @@ func (r *packetResponseWriter) Write(packet *Packet) error {
 	return nil
 }
 
+func (r *packetResponseWriter) WriteBytes(packet []byte) error {
+	if _, err := r.conn.WriteTo(packet, r.addr); err != nil {
+		return err
+	}
+	return nil
+}
+
 // PacketServer listens for RADIUS requests on a packet-based protocols (e.g.
 // UDP).
 type PacketServer struct {
