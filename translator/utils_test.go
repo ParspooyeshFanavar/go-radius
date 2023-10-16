@@ -38,42 +38,66 @@ func Test_decodeAttributeValue(t *testing.T) {
 		args args
 		want string
 	}{
-		{name: "decode string type",
+		{
+			name: "decode string type",
 			args: args{attr: []byte(`parspooyesh`), typ: dictionary.AttributeString, mapper: nil},
-			want: `parspooyesh`},
-		{name: "decode octets type",
+			want: `parspooyesh`,
+		},
+		{
+			name: "decode octets type",
 			args: args{attr: []byte{1, 2, 3, 4}, typ: dictionary.AttributeOctets, mapper: nil},
-			want: `0x01020304`},
-		{name: "decode ipAddr type",
+			want: `0x01020304`,
+		},
+		{
+			name: "decode ipAddr type",
 			args: args{attr: []byte{192, 168, 1, 1}, typ: dictionary.AttributeIPAddr, mapper: nil},
-			want: `192.168.1.1`},
-		{name: "decode byte type",
+			want: `192.168.1.1`,
+		},
+		{
+			name: "decode byte type",
 			args: args{attr: []byte{8}, typ: dictionary.AttributeByte, mapper: nil},
-			want: `8`},
-		{name: "decode short type",
+			want: `8`,
+		},
+		{
+			name: "decode short type",
 			args: args{attr: []byte{0, 0x10}, typ: dictionary.AttributeShort, mapper: nil},
-			want: `16`},
-		{name: "decode integer type",
+			want: `16`,
+		},
+		{
+			name: "decode integer type",
 			args: args{attr: []byte{0, 0, 0, 0x20}, typ: dictionary.AttributeInteger, mapper: nil},
-			want: `32`},
-		{name: "decode integer64 type",
+			want: `32`,
+		},
+		{
+			name: "decode integer64 type",
 			args: args{attr: []byte{0, 0, 0, 0, 0, 0, 0, 0x40}, typ: dictionary.AttributeInteger64, mapper: nil},
-			want: `64`},
-		{name: "decode IPv6Addr type",
+			want: `64`,
+		},
+		{
+			name: "decode IPv6Addr type",
 			args: args{attr: []byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0xa2, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, typ: dictionary.AttributeIPv6Addr, mapper: nil},
-			want: `fe80::a248:1cff:fe87:c313`},
-		{name: "decode IFID type",
+			want: `fe80::a248:1cff:fe87:c313`,
+		},
+		{
+			name: "decode IFID type",
 			args: args{attr: []byte{0xa0, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, typ: dictionary.AttributeIFID, mapper: nil},
-			want: `a0:48:1c:ff:fe:87:c3:13`},
-		{name: "decode date type",
+			want: `a0:48:1c:ff:fe:87:c3:13`,
+		},
+		{
+			name: "decode date type",
 			args: args{attr: []byte{0x5e, 0xaf, 0xb5, 0xdf}, typ: dictionary.AttributeDate, mapper: nil},
-			want: `1588573663`},
-		{name: "decode integer type with mapper",
+			want: `1588573663`,
+		},
+		{
+			name: "decode integer type with mapper",
 			args: args{attr: []byte{0, 0, 0, 1}, typ: dictionary.AttributeInteger, mapper: sip.SipMethod_GetValueString},
-			want: `Invite`},
-		{name: "decode integer type with mapper",
+			want: `Invite`,
+		},
+		{
+			name: "decode integer type with mapper",
 			args: args{attr: []byte{0, 0, 0, 20}, typ: dictionary.AttributeInteger, mapper: sip.SipMethod_GetValueString},
-			want: `20`},
+			want: `20`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -96,61 +120,89 @@ func Test_encodeAttributeValue(t *testing.T) {
 		want    radius.Attribute
 		wantErr bool
 	}{
-		{name: "encode string",
+		{
+			name: "encode string",
 			args: args{aTyp: dictionary.AttributeString, value: "parspooyesh", mapperFunc: nil},
-			want: []byte(`parspooyesh`), wantErr: false},
+			want: []byte(`parspooyesh`), wantErr: false,
+		},
 
-		{name: "encode string with mapper",
+		{
+			name: "encode string with mapper",
 			args: args{aTyp: dictionary.AttributeInteger, value: "Alive", mapperFunc: standard.AcctStatusType_GetValueNumber},
-			want: []byte{0, 0, 0, 3}, wantErr: false},
+			want: []byte{0, 0, 0, 3}, wantErr: false,
+		},
 
-		{name: "encode string with cisco mapper",
+		{
+			name: "encode string with cisco mapper",
 			args: args{aTyp: dictionary.AttributeInteger, value: "No-Carrier", mapperFunc: cisco.CiscoDisconnectCause_GetValueNumber},
-			want: []byte{0, 0, 0, 10}, wantErr: false},
+			want: []byte{0, 0, 0, 10}, wantErr: false,
+		},
 
-		{name: "encode integer",
+		{
+			name: "encode integer",
 			args: args{aTyp: dictionary.AttributeInteger, value: "5", mapperFunc: nil},
-			want: []byte{0, 0, 0, 5}, wantErr: false},
+			want: []byte{0, 0, 0, 5}, wantErr: false,
+		},
 
-		{name: "encode ip address",
+		{
+			name: "encode ip address",
 			args: args{aTyp: dictionary.AttributeIPAddr, value: "127.0.0.1", mapperFunc: nil},
-			want: []byte{127, 0, 0, 1}, wantErr: false},
+			want: []byte{127, 0, 0, 1}, wantErr: false,
+		},
 
-		{name: "encode octets",
+		{
+			name: "encode octets",
 			args: args{aTyp: dictionary.AttributeOctets, value: "0x01020304", mapperFunc: nil},
-			want: []byte{1, 2, 3, 4}, wantErr: false},
+			want: []byte{1, 2, 3, 4}, wantErr: false,
+		},
 
-		{name: "encode octets",
+		{
+			name: "encode octets",
 			args: args{aTyp: dictionary.AttributeOctets, value: "0x01020304", mapperFunc: nil},
-			want: []byte{1, 2, 3, 4}, wantErr: false},
+			want: []byte{1, 2, 3, 4}, wantErr: false,
+		},
 
-		{name: "encode byte",
+		{
+			name: "encode byte",
 			args: args{aTyp: dictionary.AttributeByte, value: "4", mapperFunc: nil},
-			want: []byte{4}, wantErr: false},
+			want: []byte{4}, wantErr: false,
+		},
 
-		{name: "encode short",
+		{
+			name: "encode short",
 			args: args{aTyp: dictionary.AttributeShort, value: "14", mapperFunc: nil},
-			want: []byte{0, 14}, wantErr: false},
+			want: []byte{0, 14}, wantErr: false,
+		},
 
-		{name: "encode integer64",
+		{
+			name: "encode integer64",
 			args: args{aTyp: dictionary.AttributeInteger64, value: "9", mapperFunc: nil},
-			want: []byte{0, 0, 0, 0, 0, 0, 0, 9}, wantErr: false},
+			want: []byte{0, 0, 0, 0, 0, 0, 0, 9}, wantErr: false,
+		},
 
-		{name: "encode ipv6",
+		{
+			name: "encode ipv6",
 			args: args{aTyp: dictionary.AttributeIPv6Addr, value: "fe80::a248:1cff:fe87:c313", mapperFunc: nil},
-			want: []byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0xa2, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, wantErr: false},
+			want: []byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0xa2, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, wantErr: false,
+		},
 
-		{name: "encode ifid",
+		{
+			name: "encode ifid",
 			args: args{aTyp: dictionary.AttributeIFID, value: "a0:48:1c:ff:fe:87:c3:13", mapperFunc: nil},
-			want: []byte{0xa0, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, wantErr: false},
+			want: []byte{0xa0, 0x48, 0x1c, 0xff, 0xfe, 0x87, 0xc3, 0x13}, wantErr: false,
+		},
 
-		{name: "encode date",
+		{
+			name: "encode date",
 			args: args{aTyp: dictionary.AttributeDate, value: "1588573663", mapperFunc: nil},
-			want: []byte{0x5e, 0xaf, 0xb5, 0xdf}, wantErr: false},
+			want: []byte{0x5e, 0xaf, 0xb5, 0xdf}, wantErr: false,
+		},
 
-		{name: "encode byte with mapper",
+		{
+			name: "encode byte with mapper",
 			args: args{aTyp: dictionary.AttributeByte, value: "IEEE-802.16e", mapperFunc: tgpp.ThreeGPPRATType_GetValueNumber},
-			want: []byte{101}, wantErr: false},
+			want: []byte{101}, wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

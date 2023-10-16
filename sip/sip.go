@@ -1,12 +1,11 @@
 package sip
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 
 	"github.com/ParspooyeshFanavar/go-radius/standard"
-
-	"fmt"
 
 	"github.com/ParspooyeshFanavar/go-radius"
 	"github.com/ParspooyeshFanavar/go-radius/dictionary"

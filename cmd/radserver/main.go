@@ -11,9 +11,11 @@ import (
 	. "github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
-var secret = flag.String("secret", "", "shared RADIUS secret between clients and server")
-var command string
-var arguments []string
+var (
+	secret    = flag.String("secret", "", "shared RADIUS secret between clients and server")
+	command   string
+	arguments []string
+)
 
 func handler(w radius.ResponseWriter, r *radius.Request) {
 	username, err1 := UserName_LookupString(r.Packet)

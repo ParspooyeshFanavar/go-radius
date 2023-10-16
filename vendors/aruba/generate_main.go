@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := ioutil.WriteFile("main.dictionary", body, 0644); err != nil {
+	if err := ioutil.WriteFile("main.dictionary", body, 0o644); err != nil {
 		log.Fatal(err)
 	}
 	defer os.Remove("main.dictionary")
@@ -49,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := ioutil.WriteFile("generated.go", generated, 0644); err != nil {
+	if err := ioutil.WriteFile("generated.go", generated, 0o644); err != nil {
 		log.Fatal(err)
 	}
 }

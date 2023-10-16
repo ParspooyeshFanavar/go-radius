@@ -10,7 +10,7 @@ import (
 func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {
 	ident := identifier(vendor.Name)
 
-	//attrOIDMap
+	// attrOIDMap
 	p(w)
 	p(w, `var attrOIDMap = map[radius.Type]radius.NameType {`)
 	for _, attr := range vendor.Attributes {
@@ -25,7 +25,7 @@ func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {
 	}
 	p(w, `}`)
 
-	//attrNameMap
+	// attrNameMap
 	p(w)
 	p(w, `var attrNameMap = map[string]radius.OIDType {`)
 	for _, attr := range vendor.Attributes {
@@ -40,7 +40,7 @@ func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {
 	}
 	p(w, `}`)
 
-	//GetAttrName function
+	// GetAttrName function
 	p(w)
 	p(w, `func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {`)
 	p(w, `	`, `name, ok := attrOIDMap[radius.Type(T)]`)
@@ -50,7 +50,7 @@ func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {
 	p(w, `	`, `return "", 2, nil`)
 	p(w, `}`)
 
-	//GetAttrOID function
+	// GetAttrOID function
 	p(w)
 	p(w, `func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {`)
 	p(w, `	`, `t, ok := attrNameMap[name]`)
@@ -60,7 +60,7 @@ func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {
 	p(w, `	`, `return -1, dictionary.AttributeOctets, nil`)
 	p(w, `}`)
 
-	//Register Vendor attributeMap
+	// Register Vendor attributeMap
 	p(w)
 	p(w, `func init() {`)
 	p(w, `	`, `attributemap.RegisterVendor(`, `_`, ident, `_VendorID`, `, GetAttrName, GetAttrOID)`)

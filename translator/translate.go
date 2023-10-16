@@ -92,7 +92,6 @@ func TranslateMapToAttributes(attrMap *map[string][]string) *radius.Attributes {
 
 // getVSANameType return name, type and value mapper function for a specific vendorID and oid
 func getVSANameType(vendorID uint32, vsaTyp byte) (name string, typ dict.AttributeType, mapperFunc func(uint32) (string, error), err error) {
-
 	getAttrName, ok := attributemap.GetOIDMapper(vendorID)
 	if ok {
 		// vendorID is exist in registered vendors
@@ -116,7 +115,6 @@ func getVSANameType(vendorID uint32, vsaTyp byte) (name string, typ dict.Attribu
 
 func CreateAttribute(typ string, value string) (radius.Type, radius.Attribute, error) {
 	vendorID, oid, aTyp, mapperFunc, err := findAttrTypeByName(typ)
-
 	if err != nil {
 		return -1, nil, err
 	}

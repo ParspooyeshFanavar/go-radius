@@ -80,8 +80,7 @@ func (e *UnknownVendorError) Error() string {
 	return `unknown vendor "` + e.Vendor + `"`
 }
 
-type UnmatchedEndVendorError struct {
-}
+type UnmatchedEndVendorError struct{}
 
 func (e *UnmatchedEndVendorError) Error() string {
 	return `unmatched END-VENDOR`
@@ -95,15 +94,13 @@ func (e *InvalidEndVendorError) Error() string {
 	return `invalid END-VENDOR "` + e.Vendor + `"`
 }
 
-type BeginVendorIncludeError struct {
-}
+type BeginVendorIncludeError struct{}
 
 func (e *BeginVendorIncludeError) Error() string {
 	return `invalid $INCLUDE inside BEGIN-VENDOR block`
 }
 
-type UnclosedVendorBlockError struct {
-}
+type UnclosedVendorBlockError struct{}
 
 func (e *UnclosedVendorBlockError) Error() string {
 	return `unclosed BEGIN-VENDOR block`
@@ -125,8 +122,7 @@ func (e *DuplicateVendorError) Error() string {
 	return `duplicate vendor "` + e.Vendor.Name + `" (` + strconv.Itoa(e.Vendor.Number) + `)`
 }
 
-type NestedVendorBlockError struct {
-}
+type NestedVendorBlockError struct{}
 
 func (e *NestedVendorBlockError) Error() string {
 	return `invalid BEGIN-VENDOR inside vendor block`

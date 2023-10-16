@@ -81,7 +81,7 @@ func TestTestData(t *testing.T) {
 			}
 
 			generatedFile := filepath.Join("testdata", tt.Name+".generated")
-			if err := ioutil.WriteFile(generatedFile, docs, 0644); err != nil {
+			if err := ioutil.WriteFile(generatedFile, docs, 0o644); err != nil {
 				t.Fatalf("could not write generated file: %s", err)
 			}
 

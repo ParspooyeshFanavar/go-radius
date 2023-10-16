@@ -17,7 +17,6 @@ import (
 
 // encodeAttributeValue encode a string value to a aTyp radius attribute
 func encodeAttributeValue(aTyp dict.AttributeType, value string, mapperFunc func(string) (uint32, error)) (radius.Attribute, error) {
-
 	var attr radius.Attribute
 	var err error
 
@@ -164,18 +163,17 @@ func decodeAttributeValue(attr radius.Attribute, typ dict.AttributeType, mapperF
 
 // findAttrTypeByName to finding attribute's vendorID, type and value mapper function by name
 func findAttrTypeByName(typ string) (vendorID int, oid radius.Type, aTyp dict.AttributeType, mapperFunc func(string) (uint32, error), err error) {
-
 	// rfc standard attributes
 	if oid, aTyp, mapperFunc = standard.GetAttrOID(typ); oid > 0 {
 		return 0, oid, aTyp, mapperFunc, nil
 	}
 
-	//sip(ser) experimental illegal attributes
+	// sip(ser) experimental illegal attributes
 	if oid, aTyp, mapperFunc = sip.GetAttrOID(typ); oid > 0 {
 		return 0, oid, aTyp, mapperFunc, nil
 	}
 
-	//vendor specific attributes
+	// vendor specific attributes
 	if vendorID, oid, aTyp, mapperFunc := attributemap.FindVSATypeByName(typ); vendorID != -1 {
 		return vendorID, oid, aTyp, mapperFunc, nil
 	}

@@ -53,21 +53,31 @@ func TestTranslateAttributes(t *testing.T) {
 		args args
 		want *map[string][]string
 	}{
-		{name: "translate attributes",
+		{
+			name: "translate attributes",
 			args: args{attributes: &radius.Attributes{1: {[]byte(`parspooyesh`)}}},
-			want: &map[string][]string{"User-Name": {`parspooyesh`}}},
-		{name: "translate attributes with vsa",
+			want: &map[string][]string{"User-Name": {`parspooyesh`}},
+		},
+		{
+			name: "translate attributes with vsa",
 			args: args{attributes: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0, 9, 1, 35}, []byte(`client-mac-address=14cc.2065.5261`)...)}}},
-			want: &map[string][]string{"User-Name": {`parspooyesh`}, "Cisco-AVPair": {"client-mac-address=14cc.2065.5261"}}},
-		{name: "translate attributes with vsa unknown vendor",
+			want: &map[string][]string{"User-Name": {`parspooyesh`}, "Cisco-AVPair": {"client-mac-address=14cc.2065.5261"}},
+		},
+		{
+			name: "translate attributes with vsa unknown vendor",
 			args: args{attributes: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 255, 255, 78, 5}, []byte(`abc`)...)}}},
-			want: &map[string][]string{"User-Name": {`parspooyesh`}, "65535;78": {"0x616263"}}},
-		{name: "translate sip attributes",
+			want: &map[string][]string{"User-Name": {`parspooyesh`}, "65535;78": {"0x616263"}},
+		},
+		{
+			name: "translate sip attributes",
 			args: args{attributes: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 101: {[]byte{0, 0, 0, 1}}}},
-			want: &map[string][]string{"User-Name": {`parspooyesh`}, "Sip-Method": {"Invite"}}},
-		{name: "translate attributes with mapped value",
+			want: &map[string][]string{"User-Name": {`parspooyesh`}, "Sip-Method": {"Invite"}},
+		},
+		{
+			name: "translate attributes with mapped value",
 			args: args{attributes: &radius.Attributes{6: {[]byte{0, 0, 0, 1}}, 26: {append([]byte{0, 0, 255, 255, 78, 5}, []byte(`abc`)...)}}},
-			want: &map[string][]string{`Service-Type`: {`Login-User`}, "65535;78": {"0x616263"}}},
+			want: &map[string][]string{`Service-Type`: {`Login-User`}, "65535;78": {"0x616263"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -87,25 +97,35 @@ func TestTranslateMapToAttributes(t *testing.T) {
 		args args
 		want *radius.Attributes
 	}{
-		{name: "translate map",
+		{
+			name: "translate map",
 			args: args{attrMap: &map[string][]string{"User-Name": {`parspooyesh`}}},
-			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}}},
+			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}},
+		},
 
-		{name: "translate map with vsa",
+		{
+			name: "translate map with vsa",
 			args: args{attrMap: &map[string][]string{"User-Name": {`parspooyesh`}, "Cisco-AVPair": {"client-mac-address=14cc.2065.5261"}, "Cisco-NAS-Port": {"1812"}}},
-			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0, 9, 1, 35}, []byte(`client-mac-address=14cc.2065.5261`)...), append([]byte{0, 0, 0, 9, 2, 6}, []byte(`1812`)...)}}},
+			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0, 9, 1, 35}, []byte(`client-mac-address=14cc.2065.5261`)...), append([]byte{0, 0, 0, 9, 2, 6}, []byte(`1812`)...)}},
+		},
 
-		{name: "translate map with multiple vsa",
+		{
+			name: "translate map with multiple vsa",
 			args: args{attrMap: &map[string][]string{"User-Name": {`parspooyesh`}, "Cisco-AVPair": {"client-mac-address=14cc.2065.5261"}}},
-			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0, 9, 1, 35}, []byte(`client-mac-address=14cc.2065.5261`)...)}}},
+			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0, 9, 1, 35}, []byte(`client-mac-address=14cc.2065.5261`)...)}},
+		},
 
-		{name: "translate map with unknown attribute",
+		{
+			name: "translate map with unknown attribute",
 			args: args{attrMap: &map[string][]string{"User-Name": {`parspooyesh`}, "unknown": {"0x616263"}}},
-			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}}},
+			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}},
+		},
 
-		{name: "translate map with numeric key attribute",
+		{
+			name: "translate map with numeric key attribute",
 			args: args{attrMap: &map[string][]string{"User-Name": {`parspooyesh`}, `758;25`: {"0x616263"}}},
-			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0x02, 0xf6, 25, 5}, []byte(`abc`)...)}}},
+			want: &radius.Attributes{1: {[]byte(`parspooyesh`)}, 26: {append([]byte{0, 0, 0x02, 0xf6, 25, 5}, []byte(`abc`)...)}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

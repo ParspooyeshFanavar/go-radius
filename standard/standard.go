@@ -1,11 +1,10 @@
 package standard
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"time"
-
-	"fmt"
 
 	"github.com/ParspooyeshFanavar/go-radius"
 	"github.com/ParspooyeshFanavar/go-radius/dictionary"
@@ -11437,7 +11436,7 @@ const (
 	AuthType_Value_Kerberos   AuthType = 1029
 	AuthType_Value_CRAM       AuthType = 1030
 	AuthType_Value_NSMTAMD5   AuthType = 1031
-	//AuthType_Value_CRAM       AuthType = 1032 TODO
+	// AuthType_Value_CRAM       AuthType = 1032 TODO
 	AuthType_Value_SMB AuthType = 1033
 )
 
@@ -11461,7 +11460,7 @@ var AuthType_Strings = map[AuthType]string{
 	AuthType_Value_Kerberos:   "Kerberos",
 	AuthType_Value_CRAM:       "CRAM",
 	AuthType_Value_NSMTAMD5:   "NS-MTA-MD5",
-	//AuthType_Value_CRAM:     "CRAM", TODO
+	// AuthType_Value_CRAM:     "CRAM", TODO
 	AuthType_Value_SMB: "SMB",
 }
 

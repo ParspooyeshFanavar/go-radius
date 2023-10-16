@@ -29,7 +29,6 @@ type Generator struct {
 }
 
 func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
-
 	attrs := make([]*dictionary.Attribute, 0, len(dict.Attributes))
 
 	ignoredAttributes := make(map[string]struct{}, len(g.IgnoredAttributes))

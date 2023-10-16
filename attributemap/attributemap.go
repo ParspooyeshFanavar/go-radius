@@ -7,12 +7,14 @@ import (
 	dict "github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
-type TypeMapperFunc func(byte) (string, dict.AttributeType, func(uint32) (string, error))
-type NameMapperFunc func(string) (radius.Type, dict.AttributeType, func(string) (uint32, error))
-type mappers struct {
-	typeMapper TypeMapperFunc
-	nameMapper NameMapperFunc
-}
+type (
+	TypeMapperFunc func(byte) (string, dict.AttributeType, func(uint32) (string, error))
+	NameMapperFunc func(string) (radius.Type, dict.AttributeType, func(string) (uint32, error))
+	mappers        struct {
+		typeMapper TypeMapperFunc
+		nameMapper NameMapperFunc
+	}
+)
 
 // vendorMappers is a map from vendorID to mapper functions
 var vendorMappers map[uint32]mappers = make(map[uint32]mappers)
