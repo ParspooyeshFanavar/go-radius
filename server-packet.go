@@ -25,6 +25,13 @@ func (r *packetResponseWriter) Write(packet *Packet) error {
 	return nil
 }
 
+func (r *packetResponseWriter) WriteBytes(packet []byte) error {
+	if _, err := r.conn.WriteTo(packet, r.addr); err != nil {
+		return err
+	}
+	return nil
+}
+
 // PacketServer listens for RADIUS requests on a packet-based protocols (e.g.
 // UDP).
 type PacketServer struct {
@@ -133,7 +140,11 @@ func (s *PacketServer) Serve(conn net.PacketConn) error {
 		go func(buff []byte, remoteAddr net.Addr) {
 			defer s.activeDone()
 
-			secret, err := s.SecretSource.RADIUSSecret(s.ctx, remoteAddr)
+			packet, err := Parse(buff, []byte{})
+			if err != nil {
+				return
+			}
+			secret, err := s.SecretSource.RADIUSSecret(s.ctx, remoteAddr, packet)
 			if err != nil {
 				return
 			}
@@ -144,8 +155,9 @@ func (s *PacketServer) Serve(conn net.PacketConn) error {
 			if !s.InsecureSkipVerify && !IsAuthenticRequest(buff, secret) {
 				return
 			}
+			packet.Secret = secret
 
-			packet, err := Parse(buff, secret)
+			packet, err = Parse(buff, secret)
 			if err != nil {
 				return
 			}

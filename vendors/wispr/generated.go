@@ -5,13 +5,63 @@ package wispr
 import (
 	"strconv"
 
-	"layeh.com/radius"
-	"layeh.com/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/attributemap"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 const (
 	_WISPr_VendorID = 14122
 )
+
+var attrOIDMap = map[radius.Type]radius.NameType{
+	1:  {"WISPr-Location-ID", 1, nil},
+	2:  {"WISPr-Location-Name", 1, nil},
+	3:  {"WISPr-Logoff-URL", 1, nil},
+	4:  {"WISPr-Redirection-URL", 1, nil},
+	5:  {"WISPr-Bandwidth-Min-Up", 5, nil},
+	6:  {"WISPr-Bandwidth-Min-Down", 5, nil},
+	7:  {"WISPr-Bandwidth-Max-Up", 5, nil},
+	8:  {"WISPr-Bandwidth-Max-Down", 5, nil},
+	9:  {"WISPr-Session-Terminate-Time", 1, nil},
+	10: {"WISPr-Session-Terminate-End-Of-Day", 1, nil},
+	11: {"WISPr-Billing-Class-Of-Service", 1, nil},
+}
+
+var attrNameMap = map[string]radius.OIDType{
+	"WISPr-Location-ID":                  {1, 1, nil},
+	"WISPr-Location-Name":                {2, 1, nil},
+	"WISPr-Logoff-URL":                   {3, 1, nil},
+	"WISPr-Redirection-URL":              {4, 1, nil},
+	"WISPr-Bandwidth-Min-Up":             {5, 5, nil},
+	"WISPr-Bandwidth-Min-Down":           {6, 5, nil},
+	"WISPr-Bandwidth-Max-Up":             {7, 5, nil},
+	"WISPr-Bandwidth-Max-Down":           {8, 5, nil},
+	"WISPr-Session-Terminate-Time":       {9, 1, nil},
+	"WISPr-Session-Terminate-End-Of-Day": {10, 1, nil},
+	"WISPr-Billing-Class-Of-Service":     {11, 1, nil},
+}
+
+func GetAttrName(T byte) (string, dictionary.AttributeType, func(uint32) (string, error)) {
+	name, ok := attrOIDMap[radius.Type(T)]
+	if ok {
+		return name.Name, name.T, name.ValueMapFunc
+	}
+	return "", 2, nil
+}
+
+func GetAttrOID(name string) (radius.Type, dictionary.AttributeType, func(string) (uint32, error)) {
+	t, ok := attrNameMap[name]
+	if ok {
+		return t.OID, t.T, t.ValueMapFunc
+	}
+	return -1, dictionary.AttributeOctets, nil
+}
+
+func init() {
+	attributemap.RegisterVendor(_WISPr_VendorID, GetAttrName, GetAttrOID)
+}
 
 func _WISPr_AddVendor(p *radius.Packet, typ byte, attr radius.Attribute) (err error) {
 	var vsa radius.Attribute

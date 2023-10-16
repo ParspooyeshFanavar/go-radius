@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"layeh.com/radius"
-	. "layeh.com/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 const usage = `

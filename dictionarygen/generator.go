@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"layeh.com/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 type externalAttribute struct {
@@ -77,7 +77,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			baseImports["net"] = struct{}{}
 		case dictionary.AttributeDate:
 			baseImports["time"] = struct{}{}
-		case dictionary.AttributeInteger, dictionary.AttributeInteger64:
+		case dictionary.AttributeShort, dictionary.AttributeInteger, dictionary.AttributeInteger64:
 			baseImports["strconv"] = struct{}{}
 		case dictionary.AttributeVSA:
 		case dictionary.AttributeByte:
@@ -97,6 +97,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		}
 
 		attrs = append(attrs, attr)
+	}
+
+	if len(dict.Values) > 0 {
+		baseImports["fmt"] = struct{}{}
 	}
 
 	dictionary.SortAttributes(attrs)
@@ -165,7 +169,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 					invalid = true
 				}
 			}
-			if attr.FlagEncrypt.Valid && attr.FlagEncrypt.Int != dictionary.EncryptUserPassword && attr.FlagEncrypt.Int != dictionary.EncryptTunnelPassword {
+			if attr.FlagEncrypt.Valid &&
+				attr.FlagEncrypt.Int != dictionary.EncryptUserPassword &&
+				attr.FlagEncrypt.Int != dictionary.EncryptTunnelPassword &&
+				attr.FlagEncrypt.Int != dictionary.EncryptAscendProprietaryPassword {
 				invalid = true
 			}
 			if attr.FlagEncrypt.Valid && attr.FlagEncrypt.Int == dictionary.EncryptTunnelPassword {
@@ -181,11 +188,12 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			switch attr.Type {
 			case dictionary.AttributeString:
 			case dictionary.AttributeOctets:
+			case dictionary.AttributeABinary:
 			case dictionary.AttributeIPAddr, dictionary.AttributeIPv6Addr, dictionary.AttributeIPv6Prefix, dictionary.AttributeIFID:
 				baseImports["net"] = struct{}{}
 			case dictionary.AttributeDate:
 				baseImports["time"] = struct{}{}
-			case dictionary.AttributeInteger, dictionary.AttributeInteger64:
+			case dictionary.AttributeShort, dictionary.AttributeInteger, dictionary.AttributeInteger64:
 				baseImports["strconv"] = struct{}{}
 			case dictionary.AttributeByte:
 				baseImports["errors"] = struct{}{}
@@ -202,6 +210,10 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			if invalid {
 				return nil, errors.New("dictionarygen: cannot generate code for " + vendor.Name + " vendor attribute " + attr.Name)
 			}
+		}
+
+		if len(vendor.Values) > 0 {
+			baseImports["fmt"] = struct{}{}
 		}
 
 		vendorAttributes := make([]*dictionary.Attribute, len(vendor.Attributes))
@@ -239,10 +251,12 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 	}
 	if len(attrs) > 0 || len(vendors) > 0 {
 		p(&w)
-		p(&w, `	"layeh.com/radius"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius"`)
 	}
 	if len(vendors) > 0 {
-		p(&w, `	"layeh.com/radius/rfc2865"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/rfc2865"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/dictionary"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/attributemap"`)
 	}
 	if len(externalAttributes) > 0 {
 		printedNewLine := false
@@ -297,9 +311,59 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		p(&w, `)`)
 	}
 
+	////attrOIDMap
+	//p(&w)
+	//p(&w, `var attrOIDMap = map[radius.Type]radius.NameType {`)
+	//for _, attr := range dict.Attributes {
+	//	valueMapping := "nil"
+	//	for _, value := range dict.Values {
+	//		if value.Attribute == attr.Name {
+	//			valueMapping = identifier(value.Attribute) + `_GetValueString`
+	//		}
+	//	}
+	//
+	//	p(&w, `	`, strconv.Itoa(attr.OID[0]), `:{ "`+attr.Name+`", `, strconv.Itoa(int(attr.Type)), `, `, valueMapping, `},`)
+	//}
+	//p(&w, `}`)
+	//
+	////attrNameMap
+	//p(&w)
+	//p(&w, `var attrNameMap = map[string]radius.OIDType {`)
+	//for _, attr := range dict.Attributes {
+	//	valueMapping := "nil"
+	//	for _, value := range dict.Values {
+	//		if value.Attribute == attr.Name {
+	//			valueMapping = identifier(value.Attribute) + `_GetValueNumber`
+	//		}
+	//	}
+	//
+	//	p(&w, `	`, `"`, attr.Name, `"`, `:{ `+strconv.Itoa(attr.OID[0])+`, `, strconv.Itoa(int(attr.Type)), `, `, valueMapping, `},`)
+	//}
+	//p(&w, `}`)
+	//
+	////GetAttrName function
+	//p(&w)
+	//p(&w, `func GetAttrName(T byte) (string, dictionary.AttributeType) {`)
+	//p(&w, `	`, `name, ok := attrOIDMap[radius.Type(T)]`)
+	//p(&w, `	`, `if ok {`)
+	//p(&w, `	`, `	`, `return name.Name, name.T`)
+	//p(&w, `	`, `}`)
+	//p(&w, `	`, `return "", 2`)
+	//p(&w, `}`)
+	//
+	////GetAttrOID function
+	//p(&w)
+	//p(&w, `func GetAttrOID(name string) (radius.Type, dictionary.AttributeType) {`)
+	//p(&w, `	`, `t, ok := attrNameMap[name]`)
+	//p(&w, `	`, `if ok {`)
+	//p(&w, `	`, `	`, `return t.OID, t.T`)
+	//p(&w, `	`, `}`)
+	//p(&w, `	`, `return -1, dictionary.AttributeOctets`)
+	//p(&w, `}`)
+
 	for _, attr := range attrs {
 		switch attr.Type {
-		case dictionary.AttributeString, dictionary.AttributeOctets:
+		case dictionary.AttributeString, dictionary.AttributeOctets, dictionary.AttributeABinary:
 			if attr.FlagConcat.Valid && attr.FlagConcat.Bool {
 				g.genAttributeStringOctetsConcat(&w, attr)
 			} else {
@@ -313,6 +377,8 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 			g.genAttributeIPv6Prefix(&w, attr, nil)
 		case dictionary.AttributeDate:
 			g.genAttributeDate(&w, attr, nil)
+		case dictionary.AttributeShort:
+			g.genAttributeInteger(&w, attr, values, 16, nil)
 		case dictionary.AttributeInteger:
 			g.genAttributeInteger(&w, attr, values, 32, nil)
 		case dictionary.AttributeIFID:
@@ -322,7 +388,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		case dictionary.AttributeInteger64:
 			g.genAttributeInteger(&w, attr, values, 64, nil)
 		case dictionary.AttributeByte:
-			g.genAttributeByte(&w, attr, nil)
+			g.genAttributeByte(&w, attr, values, nil)
 		}
 	}
 
@@ -330,7 +396,7 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 		g.genVendor(&w, vendor)
 		for _, attr := range vendor.Attributes {
 			switch attr.Type {
-			case dictionary.AttributeString, dictionary.AttributeOctets:
+			case dictionary.AttributeString, dictionary.AttributeOctets, dictionary.AttributeABinary:
 				g.genAttributeStringOctets(&w, attr, vendor)
 			case dictionary.AttributeIPAddr:
 				g.genAttributeIPAddr(&w, attr, vendor, net.IPv4len)
@@ -342,12 +408,14 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 				g.genAttributeDate(&w, attr, vendor)
 			case dictionary.AttributeIFID:
 				g.genAttributeIFID(&w, attr, vendor)
+			case dictionary.AttributeShort:
+				g.genAttributeInteger(&w, attr, vendor.Values, 16, vendor)
 			case dictionary.AttributeInteger:
 				g.genAttributeInteger(&w, attr, vendor.Values, 32, vendor)
 			case dictionary.AttributeInteger64:
 				g.genAttributeInteger(&w, attr, vendor.Values, 64, vendor)
 			case dictionary.AttributeByte:
-				g.genAttributeByte(&w, attr, vendor)
+				g.genAttributeByte(&w, attr, vendor.Values, vendor)
 			}
 		}
 	}

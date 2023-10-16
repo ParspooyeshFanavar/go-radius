@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"layeh.com/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 func (g *Generator) genAttributeStringOctets(w io.Writer, attr *dictionary.Attribute, vendor *dictionary.Vendor) {
@@ -863,6 +863,8 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	p(w)
 	if bitsize == 64 {
 		p(w, `type `, ident, ` uint64`)
+	} else if bitsize == 16 {
+		p(w, `type `, ident, ` uint16`)
 	} else { // 32
 		p(w, `type `, ident, ` uint32`)
 	}
@@ -886,6 +888,28 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	p(w, `}`)
 
+	if len(values) > 0 {
+		p(w)
+		p(w, `func `, ident, `_GetValueString(value uint32) (str string, err error) {`)
+		p(w, `	str, ok := `, ident, `_Strings[`, ident, "(value)]")
+		p(w, `	if !ok {`)
+		p(w, `		err = fmt.Errorf("value: %d not found in `, ident, ` mapping", value)`)
+		p(w, `	}`)
+		p(w, `	return`)
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueNumber(value string) (str uint32, err error) {`)
+		p(w, `	for k, v := range `, ident, `_Strings {`)
+		p(w, `		if v == value {`)
+		p(w, `			return uint32(k), nil`)
+		p(w, `		}`)
+		p(w, `	}`)
+		p(w, `	err = fmt.Errorf("value: %s not found in `, ident, ` mapping", value)`)
+		p(w, `	return`)
+		p(w, `}`)
+	}
+
 	p(w)
 	p(w, `func (a `, ident, `) String() string {`)
 	p(w, `	if str, ok := `, ident, `_Strings[a]; ok {`)
@@ -902,6 +926,8 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	if bitsize == 64 {
 		p(w, `	a := radius.NewInteger64(uint64(value))`)
+	} else if bitsize == 16 {
+		p(w, `	a := radius.NewInteger16(uint16(value))`)
 	} else { // 32
 		p(w, `	a := radius.NewInteger(uint32(value))`)
 	}
@@ -939,6 +965,8 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	if bitsize == 64 {
 		p(w, `	var i uint64`)
+	} else if bitsize == 16 {
+		p(w, `	var i uint16`)
 	} else { // 32
 		p(w, `	var i uint32`)
 	}
@@ -956,6 +984,8 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	if bitsize == 64 {
 		p(w, `		i, err = radius.Integer64(attr)`)
+	} else if bitsize == 16 {
+		p(w, `		i, err = radius.Integer16(attr)`)
 	} else { // 32
 		p(w, `		i, err = radius.Integer(attr)`)
 	}
@@ -994,6 +1024,9 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	if bitsize == 64 {
 		p(w, `	var i uint64`)
 		p(w, `	i, err = radius.Integer64(a)`)
+	} else if bitsize == 16 {
+		p(w, `	var i uint16`)
+		p(w, `	i, err = radius.Integer16(a)`)
 	} else { // 32
 		p(w, `	var i uint32`)
 		p(w, `	i, err = radius.Integer(a)`)
@@ -1013,6 +1046,8 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	}
 	if bitsize == 64 {
 		p(w, `	a := radius.NewInteger64(uint64(value))`)
+	} else if bitsize == 16 {
+		p(w, `	a := radius.NewInteger16(uint16(value))`)
 	} else { // 32
 		p(w, `	a := radius.NewInteger(uint32(value))`)
 	}
@@ -1041,8 +1076,19 @@ func (g *Generator) genAttributeInteger(w io.Writer, attr *dictionary.Attribute,
 	p(w, `}`)
 }
 
+func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, allValues []*dictionary.Value, vendor *dictionary.Vendor) {
+	var values []*dictionary.Value
 
-func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, vendor *dictionary.Vendor) {
+	for _, value := range allValues {
+		if value.Attribute == attr.Name {
+			if len(values) > 0 && values[len(values)-1].Number == value.Number {
+				values[len(values)-1] = value
+			} else {
+				values = append(values, value)
+			}
+		}
+	}
+
 	ident := identifier(attr.Name)
 	var vendorIdent string
 	if vendor != nil {
@@ -1123,4 +1169,36 @@ func (g *Generator) genAttributeByte(w io.Writer, attr *dictionary.Attribute, ve
 		p(w, `	p.Attributes.Del(`, ident, `_Type)`)
 	}
 	p(w, `}`)
+
+	// Values
+	if len(values) > 0 {
+
+		p(w)
+		p(w, `var `, ident, `_Strings = map[uint32]string{`)
+		for _, value := range values {
+			p(w, `	`, strconv.Itoa(value.Number), `: `, strconv.Quote(value.Name), `,`)
+		}
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueString(value uint32) (str string, err error) {`)
+		p(w, `	str, ok := `, ident, `_Strings[value]`)
+		p(w, `	if !ok {`)
+		p(w, `		err = fmt.Errorf("value: %d not found in `, ident, ` mapping", value)`)
+		p(w, `	}`)
+		p(w, `	return`)
+		p(w, `}`)
+
+		p(w)
+		p(w, `func `, ident, `_GetValueNumber(value string) (str uint32, err error) {`)
+		p(w, `	for k, v := range `, ident, `_Strings {`)
+		p(w, `		if v == value {`)
+		p(w, `			return k, nil`)
+		p(w, `		}`)
+		p(w, `	}`)
+		p(w, `	err = fmt.Errorf("value: %s not found in `, ident, ` mapping", value)`)
+		p(w, `	return`)
+		p(w, `}`)
+
+	}
 }

@@ -3,8 +3,8 @@ package radius_test
 import (
 	"log"
 
-	"layeh.com/radius"
-	"layeh.com/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 var (

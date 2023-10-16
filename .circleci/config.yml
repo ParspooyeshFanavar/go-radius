@@ -8,13 +8,13 @@ jobs:
       # specify the version
       - image: circleci/golang:1.10
 
-    working_directory: /go/src/layeh.com/radius
+    working_directory: /go/src/github.com/ParspooyeshFanavar/go-radius
     steps:
       - checkout
 
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
       - run: go test -v ./...
-      - run: go install layeh.com/radius/cmd/radius-dict-gen
-      - run: go install layeh.com/radius/cmd/radserver
-      - run: go install layeh.com/radius/cmd/radtest
+      - run: go install github.com/ParspooyeshFanavar/go-radius/cmd/radius-dict-gen
+      - run: go install github.com/ParspooyeshFanavar/go-radius/cmd/radserver
+      - run: go install github.com/ParspooyeshFanavar/go-radius/cmd/radtest

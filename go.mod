@@ -1,3 +1,3 @@
-module layeh.com/radius
+module github.com/ParspooyeshFanavar/go-radius
 
-go 1.12
+go 1.14

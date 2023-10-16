@@ -5,9 +5,9 @@ package rfc2867
 import (
 	"strconv"
 
-	"layeh.com/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 
-	. "layeh.com/radius/rfc2866"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2866"
 )
 
 const (

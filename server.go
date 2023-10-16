@@ -63,6 +63,7 @@ func (r *Request) WithContext(ctx context.Context) *Request {
 // ResponseWriter is used by RADIUS servers when replying to a RADIUS request.
 type ResponseWriter interface {
 	Write(packet *Packet) error
+	WriteBytes(packet []byte) error
 }
 
 // SecretSource supplies RADIUS servers with the secret that should be used for
@@ -72,7 +73,7 @@ type ResponseWriter interface {
 //
 // Returning an empty secret will discard the incoming packet.
 type SecretSource interface {
-	RADIUSSecret(ctx context.Context, remoteAddr net.Addr) ([]byte, error)
+	RADIUSSecret(ctx context.Context, remoteAddr net.Addr, p *Packet) ([]byte, error)
 }
 
 // StaticSecretSource returns a SecretSource that uses secret for all requests.
@@ -84,6 +85,6 @@ type staticSecretSource struct {
 	secret []byte
 }
 
-func (s *staticSecretSource) RADIUSSecret(ctx context.Context, remoteAddr net.Addr) ([]byte, error) {
+func (s *staticSecretSource) RADIUSSecret(ctx context.Context, remoteAddr net.Addr, p *Packet) ([]byte, error) {
 	return s.secret, nil
 }

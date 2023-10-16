@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"strconv"
 
-	"layeh.com/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 const (
