@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 func TestEAPMessage(t *testing.T) {

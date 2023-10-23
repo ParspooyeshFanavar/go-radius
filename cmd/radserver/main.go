@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/exec"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 var secret = flag.String("secret", "", "shared RADIUS secret between clients and server")

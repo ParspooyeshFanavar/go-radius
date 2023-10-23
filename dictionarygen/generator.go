@@ -8,7 +8,7 @@ import (
 	"net"
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 type externalAttribute struct {
@@ -251,12 +251,12 @@ func (g *Generator) Generate(dict *dictionary.Dictionary) ([]byte, error) {
 	}
 	if len(attrs) > 0 || len(vendors) > 0 {
 		p(&w)
-		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius"`)
 	}
 	if len(vendors) > 0 {
-		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"`)
-		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"`)
-		p(&w, `	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/rfc2865"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/dictionary"`)
+		p(&w, `	"github.com/ParspooyeshFanavar/go-radius/attributemap"`)
 	}
 	if len(externalAttributes) > 0 {
 		printedNewLine := false

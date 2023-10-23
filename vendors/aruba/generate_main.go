@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 package main
 
@@ -11,8 +12,8 @@ import (
 	"net/http"
 	"os"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionarygen"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionarygen"
 )
 
 func main() {

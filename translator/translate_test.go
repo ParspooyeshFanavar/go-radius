@@ -1,10 +1,11 @@
 package translator
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"reflect"
 	"testing"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 func TestCreateAttribute(t *testing.T) {

@@ -5,7 +5,7 @@ package rfc6911
 import (
 	"net"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 const (

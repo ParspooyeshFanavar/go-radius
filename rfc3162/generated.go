@@ -5,7 +5,7 @@ package rfc3162
 import (
 	"net"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 const (

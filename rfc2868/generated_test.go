@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 func Test_Tags(t *testing.T) {

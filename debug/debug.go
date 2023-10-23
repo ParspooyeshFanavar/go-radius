@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 type Config struct {

@@ -1,17 +1,18 @@
 package translator
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
-	dict "bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
-	"bitbucket.parspooyesh.com/ibscgw/radius/sip"
-	"bitbucket.parspooyesh.com/ibscgw/radius/standard"
 	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/attributemap"
+	dict "github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/sip"
+	"github.com/ParspooyeshFanavar/go-radius/standard"
 )
 
 // encodeAttributeValue encode a string value to a aTyp radius attribute

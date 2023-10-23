@@ -4,7 +4,7 @@ import (
 	"io"
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 func (g *Generator) genVendor(w io.Writer, vendor *dictionary.Vendor) {

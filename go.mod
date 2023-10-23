@@ -1,3 +1,3 @@
-module bitbucket.parspooyesh.com/ibscgw/radius
+module github.com/ParspooyeshFanavar/go-radius
 
 go 1.14

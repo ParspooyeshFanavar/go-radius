@@ -5,9 +5,9 @@ package rfc2867
 import (
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2866"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2866"
 )
 
 const (

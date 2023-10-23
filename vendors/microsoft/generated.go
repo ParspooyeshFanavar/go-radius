@@ -9,10 +9,10 @@ import (
 	"net"
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/attributemap"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 const (
@@ -20,13 +20,13 @@ const (
 )
 
 var attrOIDMap = map[radius.Type]radius.NameType{
-	1:  {"MS-CHAP-Response", 2, nil},
-	2:  {"MS-CHAP-Error", 1, nil},
-	3:  {"MS-CHAP-CPW-1", 2, nil},
-	4:  {"MS-CHAP-CPW-2", 2, nil},
-	5:  {"MS-CHAP-LM-Enc-PW", 2, nil},
-	6:  {"MS-CHAP-NT-Enc-PW", 2, nil},
-	7:  {"MS-MPPE-Encryption-Policy", 5, MSMPPEEncryptionPolicy_GetValueString},
+	1: {"MS-CHAP-Response", 2, nil},
+	2: {"MS-CHAP-Error", 1, nil},
+	3: {"MS-CHAP-CPW-1", 2, nil},
+	4: {"MS-CHAP-CPW-2", 2, nil},
+	5: {"MS-CHAP-LM-Enc-PW", 2, nil},
+	6: {"MS-CHAP-NT-Enc-PW", 2, nil},
+	7: {"MS-MPPE-Encryption-Policy", 5, MSMPPEEncryptionPolicy_GetValueString},
 	//8:  {"MS-MPPE-Encryption-Type", 5, nil},
 	8:  {"MS-MPPE-Encryption-Types", 5, MSMPPEEncryptionTypes_GetValueString},
 	9:  {"MS-RAS-Vendor", 5, nil},

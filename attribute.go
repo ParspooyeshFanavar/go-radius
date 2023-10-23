@@ -1,7 +1,6 @@
 package radius
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"bytes"
 	"crypto/md5"
 	"encoding/binary"
@@ -10,6 +9,8 @@ import (
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 // ErrNoAttribute is returned when an attribute was not found when one was

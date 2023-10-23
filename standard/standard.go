@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"time"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"fmt"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 const (
@@ -11459,9 +11460,9 @@ var AuthType_Strings = map[AuthType]string{
 	AuthType_Value_MSCHAP:     "MS-CHAP",
 	AuthType_Value_Kerberos:   "Kerberos",
 	AuthType_Value_CRAM:       "CRAM",
-	AuthType_Value_NSMTAMD5: "NS-MTA-MD5",
+	AuthType_Value_NSMTAMD5:   "NS-MTA-MD5",
 	//AuthType_Value_CRAM:     "CRAM", TODO
-	AuthType_Value_SMB:      "SMB",
+	AuthType_Value_SMB: "SMB",
 }
 
 func AuthType_GetValueString(value uint32) (str string, err error) {

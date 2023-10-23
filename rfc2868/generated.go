@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
+	"github.com/ParspooyeshFanavar/go-radius"
 )
 
 const (

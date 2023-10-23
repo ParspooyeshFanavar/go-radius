@@ -1,14 +1,15 @@
 package translator
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
-	"bitbucket.parspooyesh.com/ibscgw/radius/sip"
-	"bitbucket.parspooyesh.com/ibscgw/radius/standard"
-	"bitbucket.parspooyesh.com/ibscgw/radius/vendors/cisco"
-	"bitbucket.parspooyesh.com/ibscgw/radius/vendors/tgpp"
 	"reflect"
 	"testing"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/sip"
+	"github.com/ParspooyeshFanavar/go-radius/standard"
+	"github.com/ParspooyeshFanavar/go-radius/vendors/cisco"
+	"github.com/ParspooyeshFanavar/go-radius/vendors/tgpp"
 )
 
 const (
@@ -166,8 +167,7 @@ func Test_encodeAttributeValue(t *testing.T) {
 	}
 }
 
-func
-Test_findAttrTypeByName(t *testing.T) {
+func Test_findAttrTypeByName(t *testing.T) {
 	type args struct {
 		typ string
 	}

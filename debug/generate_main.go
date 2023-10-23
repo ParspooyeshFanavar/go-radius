@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -8,7 +9,7 @@ import (
 	"io"
 	"os"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 func main() {
@@ -52,7 +53,7 @@ func main() {
 	fmt.Fprintln(w, "")
 	fmt.Fprintln(w, "package debug")
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, `import "bitbucket.parspooyesh.com/ibscgw/radius/dictionary"`)
+	fmt.Fprintln(w, `import "github.com/ParspooyeshFanavar/go-radius/dictionary"`)
 	fmt.Fprintln(w, "")
 	fmt.Fprintf(w, "var IncludedDictionary = %#v\n", dict)
 }

@@ -1,9 +1,10 @@
 package attributemap
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	dict "bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
 	"log"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	dict "github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 type TypeMapperFunc func(byte) (string, dict.AttributeType, func(uint32) (string, error))

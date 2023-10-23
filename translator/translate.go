@@ -1,26 +1,27 @@
 package translator
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/attributemap"
-	dict "bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
-	"bitbucket.parspooyesh.com/ibscgw/radius/sip"
-	"bitbucket.parspooyesh.com/ibscgw/radius/standard"
 	"fmt"
 
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/airespace"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/ascend"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/chakavak"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/cisco"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/fortinet"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/huawei"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/microsoft"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/mikrotik"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/quintum"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/tgpp"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/wispr"
-	_ "bitbucket.parspooyesh.com/ibscgw/radius/vendors/zte"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/attributemap"
+	dict "github.com/ParspooyeshFanavar/go-radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius/sip"
+	"github.com/ParspooyeshFanavar/go-radius/standard"
+
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/airespace"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/ascend"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/chakavak"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/cisco"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/fortinet"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/huawei"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/microsoft"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/mikrotik"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/quintum"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/tgpp"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/wispr"
+	_ "github.com/ParspooyeshFanavar/go-radius/vendors/zte"
 )
 
 // TranslateAttributes to translate radius attributes to a *map[string][]string

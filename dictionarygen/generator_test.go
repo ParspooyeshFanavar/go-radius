@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 func TestTestData(t *testing.T) {

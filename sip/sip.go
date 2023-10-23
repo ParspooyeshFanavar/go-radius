@@ -1,13 +1,15 @@
 package sip
 
 import (
-	"bitbucket.parspooyesh.com/ibscgw/radius/standard"
 	"net"
 	"strconv"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/dictionary"
+	"github.com/ParspooyeshFanavar/go-radius/standard"
+
 	"fmt"
+
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/dictionary"
 )
 
 const (

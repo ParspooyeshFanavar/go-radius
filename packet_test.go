@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2869"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2869"
 )
 
 func Test_RFC2865_7_1(t *testing.T) {

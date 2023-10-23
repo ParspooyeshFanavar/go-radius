@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/debug"
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2866"
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc2869"
-	. "bitbucket.parspooyesh.com/ibscgw/radius/rfc3162"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/debug"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2865"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2866"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc2869"
+	. "github.com/ParspooyeshFanavar/go-radius/rfc3162"
 )
 
 var secret = []byte(`1234567`)

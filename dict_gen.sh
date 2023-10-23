@@ -14,4 +14,4 @@
 ./cmd/radius-dict-gen/radius-dict-gen -package zte dictionaries/vendors/dictionary.zte >./vendors/zte/generated.go
 
 #./cmd/radius-dict-gen/radius-dict-gen -package standard dictionaries/dictionary.standard >./standard/standard.go
-#./cmd/radius-dict-gen/radius-dict-gen -ref "Service-Type:bitbucket.parspooyesh.com/ibscgw/radius/standard" -package standard dictionaries/dictionary.sip >./standard/sip.go
+#./cmd/radius-dict-gen/radius-dict-gen -ref "Service-Type:github.com/ParspooyeshFanavar/go-radius/standard" -package standard dictionaries/dictionary.sip >./standard/sip.go

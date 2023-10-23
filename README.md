@@ -4,12 +4,12 @@
 
 a Go (golang) [RADIUS](https://tools.ietf.org/html/rfc2865) client and server implementation
 
-[![GoDoc](https://godoc.org/bitbucket.parspooyesh.com/ibscgw/radius?status.svg)](https://godoc.org/bitbucket.parspooyesh.com/ibscgw/radius)
+[![GoDoc](https://godoc.org/github.com/ParspooyeshFanavar/go-radius?status.svg)](https://godoc.org/github.com/ParspooyeshFanavar/go-radius)
 [![CircleCI](https://circleci.com/gh/layeh/radius/tree/master.svg?style=shield)](https://circleci.com/gh/layeh/radius/tree/master)
 
 ## Installation
 
-    go get -u bitbucket.parspooyesh.com/ibscgw/radius
+    go get -u github.com/ParspooyeshFanavar/go-radius
 
 ## Client example
 
@@ -20,8 +20,8 @@ import (
 	"context"
 	"log"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 func main() {
@@ -45,8 +45,8 @@ package main
 import (
 	"log"
 
-	"bitbucket.parspooyesh.com/ibscgw/radius"
-	"bitbucket.parspooyesh.com/ibscgw/radius/rfc2865"
+	"github.com/ParspooyeshFanavar/go-radius"
+	"github.com/ParspooyeshFanavar/go-radius/rfc2865"
 )
 
 func main() {
@@ -80,11 +80,11 @@ func main() {
 
 Included in this package is the command line program `radius-dict-gen`. It can be installed with:
 
-    go get -u bitbucket.parspooyesh.com/ibscgw/radius/cmd/radius-dict-gen
+    go get -u github.com/ParspooyeshFanavar/go-radius/cmd/radius-dict-gen
 
 Given a FreeRADIUS dictionary, the program will generate helper functions and types for reading and manipulating RADIUS attributes in a packet. It is recommended that generated code be used for any RADIUS dictionary you would like to consume.
 
-Included in this repository are sub-packages of generated helpers for commonly used RADIUS attributes, including [`rfc2865`](https://godoc.org/bitbucket.parspooyesh.com/ibscgw/radius/rfc2865) and [`rfc2866`](https://godoc.org/bitbucket.parspooyesh.com/ibscgw/radius/rfc2866).
+Included in this repository are sub-packages of generated helpers for commonly used RADIUS attributes, including [`rfc2865`](https://godoc.org/github.com/ParspooyeshFanavar/go-radius/rfc2865) and [`rfc2866`](https://godoc.org/github.com/ParspooyeshFanavar/go-radius/rfc2866).
 
 ## License
 
